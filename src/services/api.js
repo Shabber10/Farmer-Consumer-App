@@ -9,8 +9,8 @@ const getBaseUrl = () => {
   if (typeof window !== 'undefined' && Capacitor.isNativePlatform()) {
     const customBackend = localStorage.getItem('kd_backend_url');
     if (customBackend) return customBackend;
-    // Host PC address on local Wi-Fi or Android Emulator address
-    return 'http://192.168.0.85:5050';
+    // Live Render backend
+    return 'https://farmer-consumer-app.onrender.com';
   }
   return '';
 };
