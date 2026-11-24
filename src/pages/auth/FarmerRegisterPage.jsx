@@ -769,12 +769,12 @@ const FarmerRegisterPage = () => {
                 loading="lazy"
               />
 
-              {/* Floating Auto-Detect GPS Button */}
+              {/* Floating Auto-Detect GPS Button (Positioned top-left to avoid Leaflet zoom +/- controls on top-right) */}
               <button
                 type="button"
                 onClick={handleDetectGPS}
                 disabled={detecting}
-                className="absolute top-3 right-3 bg-white/95 backdrop-blur-md hover:bg-emerald-50 active:scale-95 text-kisan-dark font-bold text-xs px-3.5 py-2 rounded-xl shadow-md border border-kisan-border flex items-center space-x-1.5 transition-all tap-effect z-10"
+                className="absolute top-3 left-3 bg-white/95 backdrop-blur-md hover:bg-emerald-50 active:scale-95 text-kisan-dark font-bold text-xs px-3.5 py-2 rounded-xl shadow-md border border-kisan-border flex items-center space-x-1.5 transition-all tap-effect z-10"
                 title="Auto-detect current GPS location"
               >
                 {detecting ? (

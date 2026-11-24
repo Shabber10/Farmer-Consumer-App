@@ -1,15 +1,20 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Plus, Check, Sparkles } from 'lucide-react';
+import { MapPin, Plus, Check, Sparkles, Users } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 
-const ProductCard = ({ product, onQuickAdd }) => {
+const ProductCard = ({ product, onQuickAdd, shoppingMode = 'community' }) => {
   const { addToCart, cart } = useCart();
   const { t } = useLanguage();
 
   const cartItem = cart.items.find(item => item.product_id === product.id);
   const isInCart = !!cartItem;
+
+  const individualPrice = parseFloat(product.price) || 0;
+  const bulkPrice = product.bulk_price ? parseFloat(product.bulk_price) : Math.round(individualPrice * 0.75);
+  const savings = Math.max(0, individualPrice - bulkPrice);
+  const savingsPercent = individualPrice > 0 ? Math.round((savings / individualPrice) * 100) : 25;
 
   const handleAdd = async (e) => {
     e.preventDefault();
@@ -61,15 +66,41 @@ const ProductCard = ({ product, onQuickAdd }) => {
           </p>
         </div>
 
-        {/* Pricing & Add to Cart */}
+        {/* Pricing & Add to Cart based on Shopping Mode */}
         <div className="mt-2.5 sm:mt-3 pt-2 sm:pt-2.5 border-t border-gray-100 flex flex-wrap sm:flex-nowrap items-center justify-between gap-1.5 sm:gap-2">
           <div className="min-w-0">
-            <span className="text-sm sm:text-base md:text-lg font-extrabold text-kisan-dark">
-              ₹{product.price.toFixed(2)}
-            </span>
-            <span className="text-[10px] sm:text-[11px] text-kisan-muted font-normal ml-0.5">
-              /{product.unit}
-            </span>
+            {shoppingMode === 'community' ? (
+              <div>
+                <div className="flex items-baseline space-x-1">
+                  <span className="text-base sm:text-lg font-black text-emerald-700">
+                    ₹{bulkPrice.toFixed(2)}
+                  </span>
+                  <span className="text-[10px] sm:text-[11px] text-gray-400 line-through">
+                    ₹{individualPrice.toFixed(2)}
+                  </span>
+                  <span className="text-[10px] text-kisan-muted font-normal">
+                    /{product.unit}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-1 mt-0.5">
+                  <span className="text-[9px] font-bold text-emerald-800 bg-emerald-100/80 px-1.5 py-0.2 rounded">
+                    Save {savingsPercent}% Bulk
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <span className="text-base sm:text-lg font-extrabold text-kisan-dark">
+                  ₹{individualPrice.toFixed(2)}
+                </span>
+                <span className="text-[10px] sm:text-[11px] text-kisan-muted font-normal ml-0.5">
+                  /{product.unit}
+                </span>
+                <p className="text-[9px] text-emerald-700 font-semibold mt-0.5">
+                  Bulk: ₹{bulkPrice.toFixed(2)} in Group
+                </p>
+              </div>
+            )}
           </div>
 
           <button
@@ -81,7 +112,9 @@ const ProductCard = ({ product, onQuickAdd }) => {
                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 : isInCart 
                   ? 'bg-kisan-light text-kisan-dark border border-kisan-primary/30 hover:bg-kisan-primary hover:text-white'
-                  : 'bg-kisan-primary text-white hover:bg-kisan-dark'
+                  : shoppingMode === 'community'
+                    ? 'bg-emerald-700 hover:bg-emerald-800 text-white'
+                    : 'bg-kisan-primary text-white hover:bg-kisan-dark'
               }
             `}
           >
@@ -93,7 +126,7 @@ const ProductCard = ({ product, onQuickAdd }) => {
             ) : (
               <>
                 <Plus className="w-3.5 h-3.5" />
-                <span>{t('addToCart')}</span>
+                <span>{shoppingMode === 'community' ? 'Group Buy' : t('addToCart')}</span>
               </>
             )}
           </button>
