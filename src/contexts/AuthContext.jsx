@@ -28,18 +28,45 @@ export const AuthProvider = ({ children }) => {
     verifyUser();
   }, []);
 
-  const login = async (mobile_number, password) => {
-    const res = await api.post('/api/auth/login', { mobile_number, password });
-    const { token: newToken, user: newUser } = res.data;
-    setToken(newToken);
-    setUser(newUser);
-    localStorage.setItem('kd_token', newToken);
-    localStorage.setItem('kd_user', JSON.stringify(newUser));
-    return newUser;
+  const login = async (identifier, password) => {
+    try {
+      const res = await api.post('/api/auth/login', { identifier, password });
+      const { token: newToken, user: newUser } = res.data;
+      setToken(newToken);
+      setUser(newUser);
+      localStorage.setItem('kd_token', newToken);
+      localStorage.setItem('kd_user', JSON.stringify(newUser));
+      return newUser;
+    } catch (err) {
+      if (err.response?.data?.needs_verification) {
+        return {
+          needs_verification: true,
+          email: err.response.data.email,
+          role: err.response.data.role,
+          dev_otp: err.response.data.dev_otp
+        };
+      }
+      throw err;
+    }
   };
 
   const register = async (registerData) => {
     const res = await api.post('/api/auth/register', registerData);
+    const { token: newToken, user: newUser, dev_otp, needs_verification } = res.data;
+    setToken(newToken);
+    setUser(newUser);
+    localStorage.setItem('kd_token', newToken);
+    localStorage.setItem('kd_user', JSON.stringify(newUser));
+    return { ...newUser, dev_otp, needs_verification };
+  };
+
+  const sendVerificationOtp = async (email) => {
+    const res = await api.post('/api/auth/send-verification-otp', { email });
+    return res.data;
+  };
+
+  const verifyEmail = async (email, otp) => {
+    const res = await api.post('/api/auth/verify-email-otp', { email, otp });
     const { token: newToken, user: newUser } = res.data;
     setToken(newToken);
     setUser(newUser);
@@ -76,7 +103,9 @@ export const AuthProvider = ({ children }) => {
       login,
       register,
       logout,
-      updateUser
+      updateUser,
+      verifyEmail,
+      sendVerificationOtp
     }}>
       {children}
     </AuthContext.Provider>

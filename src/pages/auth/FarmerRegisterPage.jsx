@@ -488,8 +488,14 @@ const FarmerRegisterPage = () => {
         landmark: formData.landmark.trim(),
       };
 
-      await register(payload);
-      navigate('/farmer');
+      const registered = await register(payload);
+      navigate('/verify-email', {
+        state: {
+          email: formData.email.trim(),
+          role: 'farmer',
+          dev_otp: registered?.dev_otp
+        }
+      });
     } catch (err) {
       setError(err.response?.data?.error || 'Registration failed. Please check details.');
     } finally {

@@ -34,6 +34,17 @@ const LoginPage = () => {
     try {
       setLoading(true);
       const user = await login(identifier, password);
+      if (user?.needs_verification) {
+        navigate('/verify-email', {
+          state: {
+            email: user.email || identifier,
+            role: user.role,
+            dev_otp: user.dev_otp
+          }
+        });
+        return;
+      }
+
       if (user.role === 'farmer') {
         navigate('/farmer');
       } else if (user.role === 'admin') {
@@ -42,6 +53,16 @@ const LoginPage = () => {
         navigate('/buyer');
       }
     } catch (err) {
+      if (err.response?.data?.needs_verification) {
+        navigate('/verify-email', {
+          state: {
+            email: err.response.data.email || identifier,
+            role: err.response.data.role,
+            dev_otp: err.response.data.dev_otp
+          }
+        });
+        return;
+      }
       setError(err.response?.data?.error || 'Failed to login. Please check credentials.');
     } finally {
       setLoading(false);

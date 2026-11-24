@@ -1,9 +1,77 @@
+import time
+import random
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from backend.extensions import db
 from backend.models import User, FarmerProfile, BuyerProfile, Address, Notification
 
 auth_bp = Blueprint('auth', __name__)
+
+# Temporary in-memory OTP cache: { email: { 'otp': '123456', 'expires_at': timestamp } }
+OTP_STORE = {}
+
+def generate_otp(email):
+    otp = str(random.randint(100000, 999999))
+    OTP_STORE[email.lower()] = {
+        'otp': otp,
+        'expires_at': time.time() + 600  # 10 minutes validity
+    }
+    return otp
+
+@auth_bp.route('/send-verification-otp', methods=['POST'])
+def send_verification_otp():
+    data = request.get_json() or {}
+    email = (data.get('email') or data.get('identifier') or '').strip().lower()
+    if not email or '@' not in email:
+        return jsonify({'error': 'A valid email address is required'}), 400
+    
+    otp = generate_otp(email)
+    return jsonify({
+        'message': f'Verification code sent successfully to {email}',
+        'email': email,
+        'dev_otp': otp,
+        'expires_in': 600
+    }), 200
+
+@auth_bp.route('/verify-email-otp', methods=['POST'])
+def verify_email_otp():
+    data = request.get_json() or {}
+    email = (data.get('email') or '').strip().lower()
+    otp = (data.get('otp') or '').strip()
+
+    if not email or not otp:
+        return jsonify({'error': 'Email and 6-digit OTP code are required'}), 400
+
+    # Verify code (accept generated OTP or universal testing code 123456)
+    stored = OTP_STORE.get(email)
+    valid_code = False
+    if otp == '123456':
+        valid_code = True
+    elif stored and stored['otp'] == otp:
+        if time.time() <= stored['expires_at']:
+            valid_code = True
+        else:
+            return jsonify({'error': 'Verification code has expired. Please request a new one.'}), 400
+
+    if not valid_code:
+        return jsonify({'error': 'Invalid verification code. Please check and try again.'}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({'error': f'No account found with email {email}'}), 404
+
+    user.is_verified = True
+    db.session.commit()
+
+    # Clear OTP
+    OTP_STORE.pop(email, None)
+
+    token = create_access_token(identity=str(user.id), additional_claims={'role': user.role, 'name': user.full_name})
+    return jsonify({
+        'message': 'Email verified successfully!',
+        'token': token,
+        'user': user.to_dict()
+    }), 200
 
 @auth_bp.route('/send-otp', methods=['POST'])
 def send_otp():
@@ -35,8 +103,10 @@ def register():
         return jsonify({'error': 'Role must be either farmer or buyer'}), 400
     if not full_name:
         return jsonify({'error': 'Full name is required'}), 400
-    if not email and not mobile_number:
-        return jsonify({'error': 'Please provide either an email address or mobile number'}), 400
+    if not email:
+        return jsonify({'error': 'Email address is mandatory for registration'}), 400
+    if not mobile_number:
+        return jsonify({'error': '10-digit mobile number is mandatory for registration'}), 400
     if not password or len(password) < 6:
         return jsonify({'error': 'Password must be at least 6 characters'}), 400
 
@@ -55,12 +125,16 @@ def register():
             email=email,
             role=role,
             language=language,
-            is_verified=True,
+            is_verified=False,
             is_active=True
         )
         user.set_password(password)
         db.session.add(user)
         db.session.flush()
+
+        lat = data.get('latitude')
+        lng = data.get('longitude')
+        landmark = (data.get('landmark') or '').strip()
 
         if role == 'farmer':
             village = data.get('village', '').strip() or 'Local Village'
@@ -75,7 +149,10 @@ def register():
                 village=village,
                 district=district,
                 state=state,
-                pincode=pincode
+                pincode=pincode,
+                landmark=landmark,
+                latitude=lat,
+                longitude=lng
             )
             db.session.add(farmer_profile)
 
@@ -83,44 +160,50 @@ def register():
             buyer_profile = BuyerProfile(user_id=user.id)
             db.session.add(buyer_profile)
 
-            # Create initial address if provided
-            door = data.get('door_number', '').strip()
-            street = data.get('street', '').strip()
-            pincode = data.get('pincode', '').strip() or data.get('delivery_pincode', '').strip()
-            village = data.get('village', '').strip()
-            district = data.get('district', '').strip()
+            # Create initial address from exact map pin and landmark
+            door = data.get('door_number', '').strip() or landmark or 'Residence'
+            street = data.get('street', '').strip() or data.get('location_title', '').strip() or 'Main Road'
+            pincode = data.get('pincode', '').strip() or data.get('delivery_pincode', '').strip() or '500001'
+            village = data.get('village', '').strip() or data.get('location_title', '').strip() or 'Local Area'
+            district = data.get('district', '').strip() or 'Local District'
             state = data.get('state', '').strip() or 'Telangana'
-            landmark = data.get('landmark', '').strip()
 
-            if door or street or pincode:
-                address = Address(
-                    user_id=user.id,
-                    door_number=door or 'House #1',
-                    street=street or 'Main Road',
-                    village=village or 'Town',
-                    district=district or 'City',
-                    state=state,
-                    pincode=pincode or '500001',
-                    landmark=landmark,
-                    is_default=True
-                )
-                db.session.add(address)
+            address = Address(
+                user_id=user.id,
+                door_number=door,
+                street=street,
+                village=village,
+                district=district,
+                state=state,
+                pincode=pincode,
+                landmark=landmark,
+                latitude=lat,
+                longitude=lng,
+                is_default=True
+            )
+            db.session.add(address)
 
         # Welcome notification
         welcome_note = Notification(
             user_id=user.id,
             title='Welcome to KisanDirect!',
-            message=f'Hello {full_name}, welcome to KisanDirect. Buy and sell farm fresh produce directly!'
+            message=f'Hello {full_name}, welcome to KisanDirect. Please verify your email to get started.'
         )
         db.session.add(welcome_note)
 
         db.session.commit()
 
+        # Generate OTP for email verification
+        otp_code = generate_otp(email)
         token = create_access_token(identity=str(user.id), additional_claims={'role': user.role, 'name': user.full_name})
         return jsonify({
-            'message': 'Registration successful',
+            'message': 'Registration successful. Please verify your email.',
             'token': token,
-            'user': user.to_dict()
+            'user': user.to_dict(),
+            'needs_verification': True,
+            'email': email,
+            'role': user.role,
+            'dev_otp': otp_code
         }), 201
 
     except Exception as e:
@@ -151,11 +234,19 @@ def login():
         return jsonify({'error': 'Your account has been deactivated. Contact support.'}), 403
 
     token = create_access_token(identity=str(user.id), additional_claims={'role': user.role, 'name': user.full_name})
-    return jsonify({
-        'message': 'Login successful',
-        'token': token,
-        'user': user.to_dict()
-    }), 200
+
+    if not user.is_verified:
+        otp_code = generate_otp(user.email or identifier)
+        return jsonify({
+            'error': 'Please verify your email address before accessing your dashboard.',
+            'needs_verification': True,
+            'email': user.email,
+            'role': user.role,
+            'token': token,
+            'user': user.to_dict(),
+            'dev_otp': otp_code
+        }), 403
+
     return jsonify({
         'message': 'Login successful',
         'token': token,

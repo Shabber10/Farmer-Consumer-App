@@ -18,6 +18,7 @@ import RoleSelectPage from './pages/onboarding/RoleSelectPage';
 import LoginPage from './pages/auth/LoginPage';
 import FarmerRegisterPage from './pages/auth/FarmerRegisterPage';
 import BuyerRegisterPage from './pages/auth/BuyerRegisterPage';
+import VerifyEmailPage from './pages/auth/VerifyEmailPage';
 
 // Farmer Pages
 import FarmerDashboard from './pages/farmer/FarmerDashboard';
@@ -70,7 +71,8 @@ function AppContent() {
     '/select-role',
     '/login',
     '/register/farmer',
-    '/register/buyer'
+    '/register/buyer',
+    '/verify-email'
   ].includes(location.pathname);
 
   return (
@@ -88,6 +90,7 @@ function AppContent() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register/farmer" element={<FarmerRegisterPage />} />
           <Route path="/register/buyer" element={<BuyerRegisterPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
 
           {/* Farmer Protected Routes */}
           <Route path="/farmer" element={

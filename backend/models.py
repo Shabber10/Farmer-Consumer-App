@@ -13,7 +13,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), nullable=False)  # 'farmer' or 'buyer'
     language = db.Column(db.String(10), default='en')  # 'en', 'te', 'hi'
-    is_verified = db.Column(db.Boolean, default=True)
+    is_verified = db.Column(db.Boolean, default=False)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -60,6 +60,9 @@ class FarmerProfile(db.Model):
     district = db.Column(db.String(100), nullable=False)
     state = db.Column(db.String(100), nullable=False)
     pincode = db.Column(db.String(10), nullable=False)
+    landmark = db.Column(db.String(150), nullable=True)
+    latitude = db.Column(db.Numeric(10, 6), nullable=True)
+    longitude = db.Column(db.Numeric(10, 6), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     products = db.relationship('Product', backref='farmer', lazy='dynamic', cascade='all, delete-orphan')
@@ -74,6 +77,9 @@ class FarmerProfile(db.Model):
             'district': self.district,
             'state': self.state,
             'pincode': self.pincode,
+            'landmark': self.landmark,
+            'latitude': float(self.latitude) if self.latitude is not None else None,
+            'longitude': float(self.longitude) if self.longitude is not None else None,
             'location_display': f"{self.village}, {self.district}",
             'farmer_name': self.user.full_name if self.user else None,
             'mobile_number': self.user.mobile_number if self.user else None,
@@ -109,6 +115,8 @@ class Address(db.Model):
     state = db.Column(db.String(100), nullable=False)
     pincode = db.Column(db.String(10), nullable=False)
     landmark = db.Column(db.String(150), nullable=True)
+    latitude = db.Column(db.Numeric(10, 6), nullable=True)
+    longitude = db.Column(db.Numeric(10, 6), nullable=True)
     is_default = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -134,6 +142,8 @@ class Address(db.Model):
             'state': self.state,
             'pincode': self.pincode,
             'landmark': self.landmark,
+            'latitude': float(self.latitude) if self.latitude is not None else None,
+            'longitude': float(self.longitude) if self.longitude is not None else None,
             'is_default': self.is_default,
             'formatted_address': self.formatted_address
         }

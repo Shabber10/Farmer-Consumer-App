@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 const ProtectedRoute = ({ children, requiredRole }) => {
-  const { isAuthenticated, role, loading } = useAuth();
+  const { user, isAuthenticated, role, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -16,6 +16,21 @@ const ProtectedRoute = ({ children, requiredRole }) => {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Ensure user has verified their email before entering any protected dashboard
+  if (user && user.is_verified === false) {
+    return (
+      <Navigate
+        to="/verify-email"
+        state={{
+          email: user.email,
+          role: user.role,
+          from: location.pathname
+        }}
+        replace
+      />
+    );
   }
 
   if (requiredRole && role !== requiredRole) {
