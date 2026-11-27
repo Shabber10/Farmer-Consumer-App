@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LanguageProvider } from './contexts/LanguageContext';
@@ -77,6 +77,55 @@ const RootRedirect = () => {
 function AppContent() {
   const location = useLocation();
   const { isAuthenticated } = useAuth();
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+
+  // Keep focused text inputs visible above the soft keyboard without jumping the whole screen
+  useEffect(() => {
+    let focusTimer = null;
+    let blurTimer = null;
+
+    const isTextField = (el) => {
+      if (!el || !el.tagName) return false;
+      const tag = el.tagName.toUpperCase();
+      if (tag === 'TEXTAREA' || tag === 'SELECT') return true;
+      if (tag === 'INPUT') {
+        const type = (el.getAttribute('type') || 'text').toLowerCase();
+        return !['checkbox', 'radio', 'button', 'submit', 'file', 'hidden'].includes(type);
+      }
+      return false;
+    };
+
+    const handleFocusIn = (e) => {
+      if (!isTextField(e.target)) return;
+      clearTimeout(blurTimer);
+      setKeyboardOpen(true);
+      clearTimeout(focusTimer);
+      focusTimer = setTimeout(() => {
+        try {
+          e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } catch {}
+      }, 220);
+    };
+
+    const handleFocusOut = () => {
+      clearTimeout(blurTimer);
+      blurTimer = setTimeout(() => {
+        if (!isTextField(document.activeElement)) {
+          setKeyboardOpen(false);
+        }
+      }, 150);
+    };
+
+    document.addEventListener('focusin', handleFocusIn);
+    document.addEventListener('focusout', handleFocusOut);
+    return () => {
+      clearTimeout(focusTimer);
+      clearTimeout(blurTimer);
+      document.removeEventListener('focusin', handleFocusIn);
+      document.removeEventListener('focusout', handleFocusOut);
+    };
+  }, []);
+
   const isAuthOrOnboarding = [
     '/select-language',
     '/select-role',
@@ -90,7 +139,7 @@ function AppContent() {
     <MobilePhoneFrame>
       <div className="flex flex-col min-h-screen min-h-[100dvh] w-full max-w-full overflow-x-hidden bg-kisan-bg text-kisan-text">
         {!isAuthOrOnboarding && <MobileHeader />}
-        <main className={`flex-1 flex flex-col w-full max-w-full min-w-0 overflow-x-hidden ${isAuthenticated ? 'pb-24 sm:pb-28' : 'pb-0'}`}>
+        <main className={`flex-1 flex flex-col w-full max-w-full min-w-0 overflow-x-hidden ${keyboardOpen ? 'pb-[45vh]' : isAuthenticated ? 'pb-24 sm:pb-28' : 'pb-0'}`}>
           <Routes>
           {/* Landing / Root */}
           <Route path="/" element={<RootRedirect />} />
