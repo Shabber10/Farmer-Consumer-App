@@ -77,3 +77,4 @@ backend/uploads/*
 # Local SQLite fallback
 backend/database.db
 *.db
+~$*.xlsx
