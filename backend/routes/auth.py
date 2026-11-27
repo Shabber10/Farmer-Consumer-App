@@ -278,6 +278,83 @@ def update_language():
         return jsonify({'message': 'Language updated successfully', 'language': lang}), 200
     return jsonify({'error': 'Unsupported language code'}), 400
 
+@auth_bp.route('/profile', methods=['PUT'])
+@jwt_required()
+def update_profile():
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    data = request.get_json() or {}
+    full_name = data.get('full_name', '').strip()
+    email = data.get('email', '').strip().lower() if 'email' in data else None
+    mobile_number = data.get('mobile_number', '').strip() if 'mobile_number' in data else None
+
+    if full_name:
+        user.full_name = full_name
+
+    if email and email != (user.email or ''):
+        existing = User.query.filter(User.email == email, User.id != user_id).first()
+        if existing:
+            return jsonify({'error': 'Email address is already in use by another account'}), 409
+        user.email = email
+
+    if mobile_number and mobile_number != (user.mobile_number or ''):
+        existing = User.query.filter(User.mobile_number == mobile_number, User.id != user_id).first()
+        if existing:
+            return jsonify({'error': 'Mobile number is already registered to another account'}), 409
+        user.mobile_number = mobile_number
+
+    # If farmer, update farm location details
+    if user.role == 'farmer' and user.farmer_profile:
+        fp = user.farmer_profile
+        if 'farm_name' in data and data['farm_name']:
+            fp.farm_name = data['farm_name'].strip()
+        if 'village' in data and data['village']:
+            fp.village = data['village'].strip()
+        if 'district' in data and data['district']:
+            fp.district = data['district'].strip()
+        if 'state' in data and data['state']:
+            fp.state = data['state'].strip()
+        if 'pincode' in data and data['pincode']:
+            fp.pincode = data['pincode'].strip()
+
+    db.session.commit()
+    return jsonify({
+        'message': 'Profile updated successfully',
+        'user': user.to_dict()
+    }), 200
+
+@auth_bp.route('/change-password', methods=['PUT'])
+@jwt_required()
+def change_password():
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    data = request.get_json() or {}
+    current_password = data.get('current_password', '')
+    new_password = data.get('new_password', '')
+    confirm_password = data.get('confirm_password', '')
+
+    if not current_password or not new_password:
+        return jsonify({'error': 'Current password and new password are required'}), 400
+
+    if not user.check_password(current_password):
+        return jsonify({'error': 'Incorrect current password'}), 401
+
+    if len(new_password) < 6:
+        return jsonify({'error': 'New password must be at least 6 characters'}), 400
+
+    if confirm_password and new_password != confirm_password:
+        return jsonify({'error': 'New passwords do not match'}), 400
+
+    user.set_password(new_password)
+    db.session.commit()
+    return jsonify({'message': 'Password changed successfully'}), 200
+
 @auth_bp.route('/logout', methods=['POST'])
 def logout():
     return jsonify({'message': 'Logged out successfully'}), 200

@@ -1,0 +1,230 @@
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { LanguageProvider } from './contexts/LanguageContext';
+import { CartProvider } from './contexts/CartContext';
+import { BackgroundProvider } from './contexts/BackgroundContext';
+import { NavigationProvider } from './contexts/NavigationContext';
+
+// Mobile-First Architecture Shared Infrastructure
+import {
+  MobilePhoneFrame,
+  MobileHeader,
+  MobileBottomNav,
+  ProtectedRoute,
+} from './shared';
+
+// Onboarding & Auth Domain Pages
+import {
+  LanguageSelectPage,
+  RoleSelectPage,
+  LoginPage,
+  FarmerRegisterPage,
+  BuyerRegisterPage,
+  VerifyEmailPage,
+} from './auth';
+
+// Farmer Domain Pages
+import {
+  FarmerDashboard,
+  FarmerProducts,
+  AddProductPage,
+  FarmerOrders,
+  FarmerEarnings,
+  FarmerProfile,
+  FarmerReviews,
+  FarmerCommunities,
+} from './farmer';
+
+// Consumer Domain Pages
+import {
+  MarketplaceHome,
+  CategoriesPage,
+  ProductDetailPage,
+  CartPage,
+  CheckoutPage,
+  OrderSuccessPage,
+  MyOrdersPage,
+  BuyerProfilePage,
+  CommunityPage,
+} from './consumer';
+
+// Admin Domain Pages
+import { AdminDashboard } from './admin';
+
+// Root redirect handler based on auth state
+const RootRedirect = () => {
+  const { isAuthenticated, role, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-kisan-bg">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-kisan-primary"></div>
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    if (role === 'admin') {
+      return <Navigate to="/admin" replace />;
+    }
+    return <Navigate to={role === 'farmer' ? '/farmer' : '/buyer'} replace />;
+  }
+
+  return <Navigate to="/select-language" replace />;
+};
+
+function AppContent() {
+  const location = useLocation();
+  const { isAuthenticated } = useAuth();
+  const isAuthOrOnboarding = [
+    '/select-language',
+    '/select-role',
+    '/login',
+    '/register/farmer',
+    '/register/buyer',
+    '/verify-email'
+  ].includes(location.pathname);
+
+  return (
+    <MobilePhoneFrame>
+      <div className="flex flex-col min-h-screen min-h-[100dvh] w-full max-w-full overflow-x-hidden bg-kisan-bg text-kisan-text">
+        {!isAuthOrOnboarding && <MobileHeader />}
+        <main className={`flex-1 flex flex-col w-full max-w-full min-w-0 overflow-x-hidden ${isAuthenticated ? 'pb-24 sm:pb-28' : 'pb-0'}`}>
+          <Routes>
+          {/* Landing / Root */}
+          <Route path="/" element={<RootRedirect />} />
+
+          {/* Onboarding & Authentication */}
+          <Route path="/select-language" element={<LanguageSelectPage />} />
+          <Route path="/select-role" element={<RoleSelectPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register/farmer" element={<FarmerRegisterPage />} />
+          <Route path="/register/buyer" element={<BuyerRegisterPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
+
+          {/* Farmer Protected Routes */}
+          <Route path="/farmer" element={
+            <ProtectedRoute requiredRole="farmer">
+              <FarmerDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/farmer/products" element={
+            <ProtectedRoute requiredRole="farmer">
+              <FarmerProducts />
+            </ProtectedRoute>
+          } />
+          <Route path="/farmer/add-product" element={
+            <ProtectedRoute requiredRole="farmer">
+              <AddProductPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/farmer/orders" element={
+            <ProtectedRoute requiredRole="farmer">
+              <FarmerOrders />
+            </ProtectedRoute>
+          } />
+          <Route path="/farmer/earnings" element={
+            <ProtectedRoute requiredRole="farmer">
+              <FarmerEarnings />
+            </ProtectedRoute>
+          } />
+          <Route path="/farmer/profile" element={
+            <ProtectedRoute requiredRole="farmer">
+              <FarmerProfile />
+            </ProtectedRoute>
+          } />
+          <Route path="/farmer/reviews" element={
+            <ProtectedRoute requiredRole="farmer">
+              <FarmerReviews />
+            </ProtectedRoute>
+          } />
+          <Route path="/farmer/communities" element={
+            <ProtectedRoute requiredRole="farmer">
+              <FarmerCommunities />
+            </ProtectedRoute>
+          } />
+
+          {/* Buyer Protected Routes */}
+          <Route path="/buyer" element={
+            <ProtectedRoute requiredRole="buyer">
+              <MarketplaceHome />
+            </ProtectedRoute>
+          } />
+          <Route path="/buyer/categories" element={
+            <ProtectedRoute requiredRole="buyer">
+              <CategoriesPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/buyer/product/:id" element={
+            <ProtectedRoute requiredRole="buyer">
+              <ProductDetailPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/buyer/cart" element={
+            <ProtectedRoute requiredRole="buyer">
+              <CartPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/buyer/checkout" element={
+            <ProtectedRoute requiredRole="buyer">
+              <CheckoutPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/buyer/order-success" element={
+            <ProtectedRoute requiredRole="buyer">
+              <OrderSuccessPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/buyer/orders" element={
+            <ProtectedRoute requiredRole="buyer">
+              <MyOrdersPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/buyer/community" element={
+            <ProtectedRoute requiredRole="buyer">
+              <CommunityPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/buyer/profile" element={
+            <ProtectedRoute requiredRole="buyer">
+              <BuyerProfilePage />
+            </ProtectedRoute>
+          } />
+
+          {/* Admin Routes */}
+          <Route path="/admin" element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          } />
+
+          {/* Catch-all */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
+      <MobileBottomNav />
+    </div>
+  </MobilePhoneFrame>
+);
+}
+
+function App() {
+  return (
+    <Router>
+      <NavigationProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <CartProvider>
+              <BackgroundProvider>
+                <AppContent />
+              </BackgroundProvider>
+            </CartProvider>
+          </AuthProvider>
+        </LanguageProvider>
+      </NavigationProvider>
+    </Router>
+  );
+}
+
+export default App;

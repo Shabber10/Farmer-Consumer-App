@@ -1,0 +1,368 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Upload, AlertCircle, Users, Truck } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { BackButton } from '../../shared';
+import api from '../../services/api';
+
+const AddProductPage = () => {
+  const { t } = useLanguage();
+  const navigate = useNavigate();
+
+  const [categories, setCategories] = useState([]);
+  const [formData, setFormData] = useState({
+    name: '',
+    category_id: '',
+    price: '',
+    bulk_price: '',
+    min_bulk_quantity: '50',
+    unit: 'kg',
+    available_quantity: '',
+    delivery_price_per_km: '',
+    max_delivery_km: '15',
+    image_url: ''
+  });
+
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    api.get('/api/categories').then(res => {
+      setCategories(res.data.categories || []);
+      if (res.data.categories?.length > 0) {
+        setFormData(prev => ({ ...prev, category_id: res.data.categories[0].id }));
+      }
+    });
+  }, []);
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setSelectedFile(file);
+    setImagePreview(URL.createObjectURL(file));
+
+    // Upload immediately
+    const uploadData = new FormData();
+    uploadData.append('image', file);
+
+    try {
+      setUploading(true);
+      const res = await api.post('/api/products/upload-image', uploadData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setFormData(prev => ({ ...prev, image_url: res.data.image_url }));
+    } catch (err) {
+      console.error('Image upload failed:', err);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (
+      !formData.name ||
+      !formData.category_id ||
+      !formData.unit ||
+      formData.price === '' ||
+      formData.available_quantity === '' ||
+      formData.bulk_price === '' ||
+      formData.min_bulk_quantity === '' ||
+      formData.delivery_price_per_km === '' ||
+      formData.max_delivery_km === ''
+    ) {
+      setError('All fields are required. Please fill in every field.');
+      return;
+    }
+
+    if (!formData.image_url) {
+      setError('Please upload a harvest photograph.');
+      return;
+    }
+
+    const maxKm = parseFloat(formData.max_delivery_km);
+    if (isNaN(maxKm) || maxKm <= 0 || maxKm >= 20) {
+      setError('Delivery distance must be less than 20 km (1 - 19 km)');
+      return;
+    }
+
+    const deliveryPerKm = parseFloat(formData.delivery_price_per_km);
+    if (isNaN(deliveryPerKm) || deliveryPerKm < 0) {
+      setError('Please enter a valid delivery price per km');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const individualPrice = parseFloat(formData.price);
+      const bulkPrice = parseFloat(formData.bulk_price);
+      const minBulkQty = parseFloat(formData.min_bulk_quantity);
+
+      await api.post('/api/products', {
+        name: formData.name,
+        category_id: parseInt(formData.category_id),
+        price: individualPrice,
+        bulk_price: bulkPrice,
+        min_bulk_quantity: minBulkQty,
+        available_quantity: parseFloat(formData.available_quantity),
+        unit: formData.unit,
+        delivery_price_per_km: deliveryPerKm,
+        max_delivery_km: maxKm,
+        image_url: formData.image_url
+      });
+      navigate('/farmer/products');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to list product');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8 space-y-6 pb-20 md:pb-8">
+      {/* Top Bar */}
+      <div className="flex items-center space-x-3">
+        <BackButton fallbackPath="/farmer/products" variant="circle" />
+        <div>
+          <h1 className="text-xl sm:text-2xl font-extrabold text-kisan-dark">{t('addProduct')}</h1>
+          <p className="text-xs text-kisan-muted">List your harvested produce directly in the marketplace</p>
+        </div>
+      </div>
+
+      {error && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center space-x-2 text-xs text-kisan-danger">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-5 sm:p-7 border border-kisan-border shadow-card space-y-4 text-xs">
+        {/* Photo Upload Box */}
+        <div>
+          <label className="block font-bold text-kisan-text mb-1.5">{t('uploadPhoto')} *</label>
+          <div className="border-2 border-dashed border-kisan-border rounded-2xl p-4 text-center hover:border-kisan-primary transition-colors bg-kisan-bg/50 relative overflow-hidden">
+            {imagePreview ? (
+              <div className="relative h-44 rounded-xl overflow-hidden">
+                <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                <label className="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg cursor-pointer">
+                  Change Photo
+                  <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+                </label>
+              </div>
+            ) : (
+              <label className="cursor-pointer flex flex-col items-center py-6">
+                <div className="w-12 h-12 rounded-full bg-emerald-100 text-kisan-primary flex items-center justify-center mb-2">
+                  <Upload className="w-6 h-6" />
+                </div>
+                <span className="font-bold text-kisan-dark text-sm">Click to upload harvest photograph</span>
+                <span className="text-[11px] text-kisan-muted mt-1">PNG, JPG, WEBP up to 10MB</span>
+                <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+              </label>
+            )}
+            {uploading && (
+              <div className="absolute inset-0 bg-white/80 flex items-center justify-center font-bold text-kisan-primary">
+                Uploading photo...
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Product Name */}
+        <div>
+          <label className="block font-bold text-kisan-text mb-1">{t('productName')} *</label>
+          <input
+            type="text"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            placeholder="e.g. Fresh Desi Tomatoes"
+            className="w-full px-3.5 py-2.5 bg-gray-50 border border-kisan-border rounded-xl focus:outline-none focus:border-kisan-primary text-sm font-medium"
+            required
+          />
+        </div>
+
+        {/* Category & Unit */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block font-bold text-kisan-text mb-1">{t('category')} *</label>
+            <select
+              value={formData.category_id}
+              onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+              className="w-full px-3 py-2.5 bg-gray-50 border border-kisan-border rounded-xl focus:outline-none focus:border-kisan-primary text-xs font-medium"
+              required
+            >
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block font-bold text-kisan-text mb-1">{t('unit')} *</label>
+            <select
+              value={formData.unit}
+              onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+              className="w-full px-3 py-2.5 bg-gray-50 border border-kisan-border rounded-xl focus:outline-none focus:border-kisan-primary text-xs font-medium"
+            >
+              <option value="kg">kg (Kilogram)</option>
+              <option value="gram">gram</option>
+              <option value="bunch">bunch (Katta)</option>
+              <option value="piece">piece</option>
+              <option value="dozen">dozen</option>
+              <option value="litre">litre</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Price & Quantity */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block font-bold text-kisan-text mb-1">{t('pricePerUnit')} (Individual) *</label>
+            <input
+              type="number"
+              step="0.01"
+              value={formData.price}
+              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+              placeholder="e.g. 20.00"
+              className="w-full px-3.5 py-2.5 bg-gray-50 border border-kisan-border rounded-xl focus:outline-none focus:border-kisan-primary text-sm font-bold"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-kisan-text mb-1">{t('availableQuantity')} *</label>
+            <input
+              type="number"
+              step="0.01"
+              value={formData.available_quantity}
+              onChange={(e) => setFormData({ ...formData, available_quantity: e.target.value })}
+              placeholder="e.g. 500"
+              className="w-full px-3.5 py-2.5 bg-gray-50 border border-kisan-border rounded-xl focus:outline-none focus:border-kisan-primary text-sm font-bold"
+              required
+            />
+          </div>
+        </div>
+
+        {/* Community Bulk Buying Pricing Box */}
+        <div className="bg-emerald-50/80 border border-emerald-200/90 rounded-2xl p-4 space-y-3">
+          <div className="flex items-center space-x-2">
+            <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center">
+              <Users className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-xs text-emerald-950">Community Bulk Buying Pricing</h3>
+              <p className="text-[10px] text-emerald-700">Special discounted price when residential societies order in bulk</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-bold text-emerald-900 text-[11px] mb-1">
+                Bulk Price / {formData.unit} (₹) *
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={formData.bulk_price}
+                onChange={(e) => setFormData({ ...formData, bulk_price: e.target.value })}
+                placeholder={formData.price ? `e.g. ${Math.round(formData.price * 0.75)}` : 'e.g. 15.00'}
+                className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-xl focus:outline-none focus:border-emerald-600 text-xs font-bold text-emerald-900"
+                required
+              />
+              <span className="text-[9px] text-emerald-600 block mt-0.5">Shown to residential communities</span>
+            </div>
+
+            <div>
+              <label className="block font-bold text-emerald-900 text-[11px] mb-1">
+                Min Community Target ({formData.unit}) *
+              </label>
+              <input
+                type="number"
+                step="1"
+                min="1"
+                value={formData.min_bulk_quantity}
+                onChange={(e) => setFormData({ ...formData, min_bulk_quantity: e.target.value })}
+                placeholder="e.g. 50"
+                className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-xl focus:outline-none focus:border-emerald-600 text-xs font-bold text-emerald-900"
+                required
+              />
+              <span className="text-[9px] text-emerald-600 block mt-0.5">Order confirmed when pool reaches this</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Delivery Pricing & Radius (< 20 km) */}
+        <div className="bg-amber-50/70 border border-amber-200/90 rounded-2xl p-4 space-y-3">
+          <div className="flex items-center space-x-2">
+            <div className="w-7 h-7 rounded-lg bg-amber-600 text-white flex items-center justify-center flex-shrink-0">
+              <Truck className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-xs text-amber-950">Farmer Delivery Charges</h3>
+              <p className="text-[10px] text-amber-800">Set your delivery rate per km (strictly under 20 km)</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-bold text-amber-950 text-[11px] mb-1">
+                Delivery Price / km (₹) *
+              </label>
+              <input
+                type="number"
+                step="0.5"
+                min="0"
+                value={formData.delivery_price_per_km}
+                onChange={(e) => setFormData({ ...formData, delivery_price_per_km: e.target.value })}
+                placeholder="e.g. 5"
+                className="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl focus:outline-none focus:border-amber-600 text-xs font-bold text-amber-950"
+                required
+              />
+              <span className="text-[9px] text-amber-700 block mt-0.5">Charged per km for delivery</span>
+            </div>
+
+            <div>
+              <label className="block font-bold text-amber-950 text-[11px] mb-1">
+                Max Distance (&lt; 20 km) *
+              </label>
+              <input
+                type="number"
+                step="1"
+                min="1"
+                max="19"
+                value={formData.max_delivery_km}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '' || (parseFloat(val) >= 0 && parseFloat(val) < 20)) {
+                    setFormData({ ...formData, max_delivery_km: val });
+                  }
+                }}
+                placeholder="e.g. 15"
+                className="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl focus:outline-none focus:border-amber-600 text-xs font-bold text-amber-950"
+                required
+              />
+              <span className="text-[9px] text-amber-700 block mt-0.5">Allowed range: 1 – 19 km</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={submitting || uploading}
+          className="w-full mt-2 bg-kisan-primary text-white py-3.5 rounded-xl font-bold text-sm shadow-md hover:bg-kisan-dark transition-all disabled:opacity-50"
+        >
+          {submitting ? 'Publishing Produce...' : t('saveProduct')}
+        </button>
+      </form>
+    </div>
+  );
+};
+
+export default AddProductPage;

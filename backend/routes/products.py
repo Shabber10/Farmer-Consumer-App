@@ -104,10 +104,30 @@ def create_product():
     is_organic = bool(data.get('is_organic', False))
     harvest_date_str = data.get('harvest_date')
 
-    if not name or not category_id or price is None or available_quantity is None:
-        return jsonify({'error': 'Name, category, price and quantity are required'}), 400
+    bulk_price = data.get('bulk_price')
+    min_bulk_quantity = data.get('min_bulk_quantity')
+    delivery_areas = data.get('delivery_areas', '').strip()
+    delivery_price_per_km = data.get('delivery_price_per_km')
+    max_delivery_km = data.get('max_delivery_km')
+
+    if (
+        not name or
+        not category_id or
+        not unit or
+        price is None or
+        available_quantity is None or
+        bulk_price is None or
+        min_bulk_quantity is None or
+        delivery_price_per_km is None or
+        max_delivery_km is None
+    ):
+        return jsonify({'error': 'All product fields including bulk pricing, delivery price per km, and max distance are required'}), 400
 
     try:
+        max_km_val = float(max_delivery_km)
+        if max_km_val <= 0 or max_km_val >= 20:
+            return jsonify({'error': 'Delivery distance must be less than 20 km (1 - 19 km)'}), 400
+
         harvest_date = datetime.strptime(harvest_date_str, '%Y-%m-%d').date() if harvest_date_str else None
         product = Product(
             farmer_id=farmer.id,
@@ -116,6 +136,11 @@ def create_product():
             description=description,
             image_url=image_url or '/placeholder-produce.jpg',
             price=Decimal(str(price)),
+            bulk_price=Decimal(str(bulk_price)) if bulk_price is not None else Decimal(str(round(float(price) * 0.75, 2))),
+            min_bulk_quantity=Decimal(str(min_bulk_quantity)) if min_bulk_quantity is not None else Decimal('50.00'),
+            delivery_areas=delivery_areas or location or 'Local Hub',
+            delivery_price_per_km=Decimal(str(delivery_price_per_km or 0)),
+            max_delivery_km=Decimal(str(max_km_val)),
             unit=unit,
             available_quantity=Decimal(str(available_quantity)),
             location=location,
@@ -152,6 +177,19 @@ def update_product(product_id):
         product.category_id = int(data['category_id'])
     if 'price' in data:
         product.price = Decimal(str(data['price']))
+    if 'bulk_price' in data and data['bulk_price'] is not None:
+        product.bulk_price = Decimal(str(data['bulk_price']))
+    if 'min_bulk_quantity' in data and data['min_bulk_quantity'] is not None:
+        product.min_bulk_quantity = Decimal(str(data['min_bulk_quantity']))
+    if 'delivery_areas' in data:
+        product.delivery_areas = data['delivery_areas'].strip()
+    if 'delivery_price_per_km' in data and data['delivery_price_per_km'] is not None:
+        product.delivery_price_per_km = Decimal(str(data['delivery_price_per_km']))
+    if 'max_delivery_km' in data and data['max_delivery_km'] is not None:
+        max_km_val = float(data['max_delivery_km'])
+        if max_km_val <= 0 or max_km_val >= 20:
+            return jsonify({'error': 'Delivery distance must be less than 20 km (1 - 19 km)'}), 400
+        product.max_delivery_km = Decimal(str(max_km_val))
     if 'unit' in data:
         product.unit = data['unit'].strip()
     if 'available_quantity' in data:

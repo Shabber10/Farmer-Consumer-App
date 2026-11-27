@@ -1,6 +1,8 @@
 # Node dependencies
 node_modules/
+frontend/node_modules/
 dist/
+frontend/dist/
 dist-ssr/
 *.local
 
@@ -51,11 +53,27 @@ android/app/build/
 android/captures/
 android/.externalNativeBuild/
 android/.cxx/
+frontend/android/.gradle/
+frontend/android/build/
+frontend/android/app/build/
+frontend/android/captures/
+frontend/android/.externalNativeBuild/
+frontend/android/.cxx/
 local.properties
+apk/
 *.apk
 *.aab
 
+# Unwanted & Debug Archives
+unwanted/
+backend/uploads/*
+!backend/uploads/.gitkeep
+
 # Temporary screenshot captures
 *.png
-!src/assets/**/*.png
-!public/**/*.png
+!frontend/src/assets/**/*.png
+!frontend/public/**/*.png
+
+# Local SQLite fallback
+backend/database.db
+*.db

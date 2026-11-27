@@ -1,0 +1,761 @@
+/* ==========================================================================
+   RapidoMapPicker.css - Shared Rapido-Style Interactive Map Location Picker
+   ========================================================================== */
+
+.rapido-picker-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.rapido-map-shell {
+  position: relative;
+  width: 100%;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1.5px solid var(--border-light, #cbd5e1);
+  background: #e8eef5;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  box-sizing: border-box;
+}
+
+[data-theme="dark"] .rapido-map-shell {
+  border-color: rgba(148, 163, 184, 0.25);
+  background: #0f172a;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+}
+
+.rapido-leaflet-canvas {
+  width: 100%;
+  height: 360px;
+  z-index: 1;
+  touch-action: none;
+  cursor: grab;
+}
+
+.rapido-leaflet-canvas:active {
+  cursor: grabbing;
+}
+
+.rapido-map-shell .leaflet-control-attribution {
+  font-size: 9px !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  color: #64748b !important;
+  padding: 1px 5px !important;
+  border-top-left-radius: 6px;
+}
+
+[data-theme="dark"] .rapido-map-shell .leaflet-control-attribution {
+  background: rgba(15, 23, 42, 0.75) !important;
+  color: #94a3b8 !important;
+}
+
+/* Floating Search Pill */
+.rapido-search-overlay {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 600;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rapido-search-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1.5px solid rgba(15, 23, 42, 0.08);
+  border-radius: 14px;
+  padding: 0 12px;
+  height: 46px;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.14);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+
+.rapido-search-pill:focus-within {
+  border-color: #2563eb;
+  box-shadow: 0 6px 22px rgba(37, 99, 235, 0.2);
+}
+
+[data-theme="dark"] .rapido-search-pill {
+  background: #0f172a;
+  border-color: rgba(148, 163, 184, 0.25);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+}
+
+.rapido-search-input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  font-size: 0.88rem !important;
+  font-weight: 500;
+  color: #0f172a !important;
+}
+
+[data-theme="dark"] .rapido-search-input {
+  color: #f8fafc !important;
+}
+
+.rapido-search-input::placeholder {
+  color: #94a3b8;
+}
+
+.rapido-search-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: #f1f5f9;
+  color: #475569;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+[data-theme="dark"] .rapido-search-clear {
+  background: #1e293b;
+  color: #cbd5e1;
+}
+
+.rapido-search-dropdown {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.2);
+  max-height: 230px;
+  overflow-y: auto;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+[data-theme="dark"] .rapido-search-dropdown {
+  background: #0f172a;
+  border-color: rgba(148, 163, 184, 0.25);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65);
+}
+
+.rapido-search-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 9px 10px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.rapido-search-item:hover,
+.rapido-search-item:active {
+  background: #f1f5f9;
+}
+
+[data-theme="dark"] .rapido-search-item:hover,
+[data-theme="dark"] .rapido-search-item:active {
+  background: #1e293b;
+}
+
+.rapido-search-item-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.rapido-search-item-title {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+[data-theme="dark"] .rapido-search-item-title {
+  color: #f8fafc;
+}
+
+.rapido-search-item-sub {
+  display: block;
+  font-size: 0.74rem;
+  color: #64748b;
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+[data-theme="dark"] .rapido-search-item-sub {
+  color: #94a3b8;
+}
+
+.rapido-search-status {
+  padding: 12px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Fixed Center Pin */
+.rapido-center-pin-anchor {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 500;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.rapido-pin-tooltip {
+  position: absolute;
+  bottom: 48px;
+  white-space: nowrap;
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 5px 11px;
+  border-radius: 9999px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.3);
+  letter-spacing: 0.01em;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.15s ease;
+}
+
+.rapido-pin-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px 5px 0 5px;
+  border-style: solid;
+  border-color: #0f172a transparent transparent transparent;
+}
+
+.rapido-center-pin-anchor.is-dragging .rapido-pin-tooltip {
+  transform: translateY(-10px);
+}
+
+.rapido-pin-marker {
+  position: absolute;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  filter: drop-shadow(0 4px 6px rgba(15, 23, 42, 0.35));
+}
+
+.rapido-center-pin-anchor.is-dragging .rapido-pin-marker {
+  transform: translateY(-12px) scale(1.06);
+}
+
+.rapido-pin-head {
+  width: 32px;
+  height: 32px;
+  border-radius: 50% 50% 50% 0;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  border: 2.5px solid #ffffff;
+  transform: rotate(-45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rapido-pin-inner-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ffffff;
+  transform: rotate(45deg);
+}
+
+.rapido-pin-stick {
+  width: 3px;
+  height: 8px;
+  background: #1e293b;
+  border-radius: 2px;
+  margin-top: -2px;
+}
+
+.rapido-pin-ground-shadow {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.38);
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.rapido-center-pin-anchor.is-dragging .rapido-pin-ground-shadow {
+  transform: translate(-50%, -50%) scale(0.6);
+  opacity: 0.22;
+}
+
+/* Floating Map Controls */
+.rapido-map-zoom-stack {
+  position: absolute;
+  bottom: 16px;
+  left: 12px;
+  z-index: 550;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.15);
+  overflow: hidden;
+}
+
+[data-theme="dark"] .rapido-map-zoom-stack {
+  background: #0f172a;
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
+.rapido-zoom-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.rapido-zoom-btn:first-child {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+[data-theme="dark"] .rapido-zoom-btn {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .rapido-zoom-btn:first-child {
+  border-bottom-color: rgba(148, 163, 184, 0.2);
+}
+
+.rapido-gps-fab {
+  position: absolute;
+  bottom: 16px;
+  right: 12px;
+  z-index: 550;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(37, 99, 235, 0.22);
+  background: #ffffff;
+  color: #1d4ed8;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.2);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.rapido-gps-fab:active {
+  transform: scale(0.96);
+}
+
+.rapido-gps-fab:disabled {
+  opacity: 0.8;
+  cursor: wait;
+}
+
+[data-theme="dark"] .rapido-gps-fab {
+  background: #0f172a;
+  border-color: rgba(59, 130, 246, 0.45);
+  color: #60a5fa;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
+}
+
+.rapido-map-toast {
+  position: absolute;
+  bottom: 66px;
+  left: 12px;
+  right: 12px;
+  z-index: 560;
+  background: rgba(15, 23, 42, 0.92);
+  color: #ffffff;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+/* Selected Address Summary Card */
+.rapido-address-card {
+  background: var(--bg-card, #ffffff);
+  border: 1.5px solid var(--border-light, #e2e8f0);
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+}
+
+[data-theme="dark"] .rapido-address-card {
+  background: #111b2f;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+.rapido-address-top-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.rapido-address-eyebrow {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim, #64748b);
+}
+
+.rapido-source-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 9999px;
+}
+
+.rapido-source-badge--gps {
+  background: rgba(16, 185, 129, 0.14);
+  color: #059669;
+}
+
+[data-theme="dark"] .rapido-source-badge--gps {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
+
+.rapido-source-badge--pin {
+  background: rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+}
+
+[data-theme="dark"] .rapido-source-badge--pin {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+.rapido-address-main-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.rapido-address-pin-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.rapido-address-pin-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rapido-address-title {
+  margin: 0;
+  font-size: 0.96rem;
+  font-weight: 800;
+  color: var(--text-main, #0f172a);
+  line-height: 1.25;
+}
+
+.rapido-address-full {
+  margin: 3px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted, #64748b);
+  line-height: 1.38;
+}
+
+.rapido-change-btn {
+  border: 1px solid var(--border-medium, #cbd5e1);
+  background: var(--bg-surface, #ffffff);
+  color: var(--primary, #2563eb);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .rapido-change-btn {
+  background: #1e293b;
+  border-color: rgba(148, 163, 184, 0.25);
+  color: #60a5fa;
+}
+
+.rapido-shimmer-line {
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: rapidoShimmer 1.2s infinite linear;
+}
+
+[data-theme="dark"] .rapido-shimmer-line {
+  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background-size: 200% 100%;
+}
+
+@keyframes rapidoShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes rapidoSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.rapido-spin {
+  animation: rapidoSpin 0.9s linear infinite;
+}
+
+/* Native Turn On Device Location Prompt Sheet */
+.rapido-location-prompt-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 6000;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px;
+  padding-bottom: max(env(safe-area-inset-bottom, 20px), 20px);
+  box-sizing: border-box;
+}
+
+.rapido-location-prompt-sheet {
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg-surface, #ffffff);
+  border: 1.5px solid var(--border-light, #e2e8f0);
+  border-radius: 22px;
+  padding: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-sizing: border-box;
+}
+
+[data-theme="dark"] .rapido-location-prompt-sheet {
+  background: #0f172a;
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
+.rapido-location-prompt-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rapido-location-prompt-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rapido-location-prompt-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: var(--text-main, #0f172a);
+}
+
+.rapido-location-prompt-desc {
+  margin: 3px 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted, #64748b);
+  line-height: 1.4;
+}
+
+.rapido-location-prompt-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.rapido-prompt-btn-secondary {
+  flex: 1;
+  height: 44px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border-medium, #cbd5e1);
+  background: var(--bg-surface, #ffffff);
+  color: var(--text-main, #334155);
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+[data-theme="dark"] .rapido-prompt-btn-secondary {
+  background: #1e293b;
+  border-color: rgba(148, 163, 184, 0.25);
+  color: #e2e8f0;
+}
+
+.rapido-prompt-btn-primary {
+  flex: 1.4;
+  height: 44px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
+  font-size: 0.84rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+}
+
+@media (max-width: 640px) {
+  .rapido-leaflet-canvas {
+    height: 310px;
+  }
+
+  .rapido-search-overlay {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+  }
+
+  .rapido-search-pill {
+    height: 44px;
+    border-radius: 12px;
+  }
+
+  .rapido-gps-fab {
+    height: 40px;
+    padding: 0 13px;
+    font-size: 0.76rem;
+    bottom: 14px;
+    right: 10px;
+  }
+
+  .rapido-map-zoom-stack {
+    bottom: 14px;
+    left: 10px;
+  }
+}
+
+
+/* Live User GPS Pulse Dot */
+.rapido-user-dot-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.rapido-pulse-dot {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rapido-pulse-core {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #059669;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 6px rgba(5, 150, 105, 0.7);
+  z-index: 2;
+}
+
+.rapido-pulse-ring {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(5, 150, 105, 0.35);
+  animation: rapido-pulse 1.8s infinite ease-out;
+  z-index: 1;
+}
+
+@keyframes rapido-pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}

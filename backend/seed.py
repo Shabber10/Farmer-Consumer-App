@@ -225,8 +225,8 @@ def seed_database():
             Product(
                 farmer_id=farmer1_profile.id,
                 category_id=cat_map["Vegetables"],
-                name="Fresh Country Tomatoes (Desi)",
-                description="Juicy, tangy organic tomatoes picked directly from the vine this morning. Excellent for curries, salads and rasam.",
+                name="Fresh Country Tomatoes",
+                description="Juicy, tangy organic tomatoes picked directly from the vine this morning. Excellent for curries, salads and soup.",
                 image_url="https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=600&auto=format&fit=crop&q=80",
                 price=Decimal('32.00'),
                 unit="kg",
@@ -240,7 +240,7 @@ def seed_database():
                 farmer_id=farmer1_profile.id,
                 category_id=cat_map["Vegetables"],
                 name="Crisp Farm Red Onions",
-                description="Directly harvested Nashik-variety red onions with high shelf life and crisp texture. Pure farm flavor.",
+                description="Directly harvested red onions with high shelf life and crisp texture. Pure farm flavor.",
                 image_url="https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=600&auto=format&fit=crop&q=80",
                 price=Decimal('28.00'),
                 unit="kg",
@@ -253,8 +253,8 @@ def seed_database():
             Product(
                 farmer_id=farmer1_profile.id,
                 category_id=cat_map["Vegetables"],
-                name="Tender Green Ladyfinger (Bhindi)",
-                description="Handpicked morning tender bhindi without chemical pesticides. Crisp, snap-fresh pods.",
+                name="Tender Green Okra",
+                description="Handpicked morning tender green okra without chemical pesticides. Crisp, snap-fresh pods.",
                 image_url="https://images.unsplash.com/photo-1628771065518-0d82f1938462?w=600&auto=format&fit=crop&q=80",
                 price=Decimal('45.00'),
                 unit="kg",
@@ -267,7 +267,7 @@ def seed_database():
             Product(
                 farmer_id=farmer2_profile.id,
                 category_id=cat_map["Vegetables"],
-                name="Farm Fresh Spinach (Palak)",
+                name="Farm Fresh Spinach",
                 description="Lush green spinach bundles grown with bio-compost and zero synthetic fertilizers. Clean and nutrient dense.",
                 image_url="https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=600&auto=format&fit=crop&q=80",
                 price=Decimal('20.00'),
@@ -281,8 +281,8 @@ def seed_database():
             Product(
                 farmer_id=farmer2_profile.id,
                 category_id=cat_map["Vegetables"],
-                name="Native Purple Brinjal (Vankaya)",
-                description="Traditional purple striped brinjals, soft seedless texture, perfect for stuffed gutti vankaya curry.",
+                name="Native Purple Eggplant",
+                description="Traditional purple striped eggplants, soft seedless texture, perfect for healthy cooking.",
                 image_url="https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=600&auto=format&fit=crop&q=80",
                 price=Decimal('38.00'),
                 unit="kg",
@@ -325,7 +325,7 @@ def seed_database():
             Product(
                 farmer_id=farmer1_profile.id,
                 category_id=cat_map["Fruits"],
-                name="Organic Guava (Allahabad Safeda)",
+                name="Organic Sweet Guava",
                 description="White-flesh crunchy sweet guavas freshly picked from orchard trees. High vitamin C.",
                 image_url="https://images.unsplash.com/photo-1536511135899-73600f959e1c?w=600&auto=format&fit=crop&q=80",
                 price=Decimal('55.00'),
@@ -341,7 +341,7 @@ def seed_database():
             Product(
                 farmer_id=farmer1_profile.id,
                 category_id=cat_map["Grains"],
-                name="Sona Masoori Raw Rice (Aged 1 Year)",
+                name="Sona Masoori Raw Rice",
                 description="Single-origin aromatic Sona Masoori rice aged 1 year. Light, fluffy, and ideal for daily meals.",
                 image_url="https://images.unsplash.com/photo-1586201375761-83865001e31c?w=600&auto=format&fit=crop&q=80",
                 price=Decimal('62.00'),
@@ -355,7 +355,7 @@ def seed_database():
             Product(
                 farmer_id=farmer3_profile.id,
                 category_id=cat_map["Grains"],
-                name="Organic Foxtail Millet (Korra)",
+                name="Organic Foxtail Millet",
                 description="Gluten-free traditional superfood grain. High dietary fiber and low glycemic index.",
                 image_url="https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600&auto=format&fit=crop&q=80",
                 price=Decimal('85.00'),
@@ -371,8 +371,8 @@ def seed_database():
             Product(
                 farmer_id=farmer3_profile.id,
                 category_id=cat_map["Pulses"],
-                name="Unpolished Desi Toor Dal (Pigeon Pea)",
-                description="Stone-milled, unpolished toor dal retaining all outer nutrient bran. Cooks creamy and flavorful.",
+                name="Unpolished Yellow Pigeon Pea",
+                description="Stone-milled, unpolished toor lentils retaining all outer nutrient bran. Cooks creamy and flavorful.",
                 image_url="https://images.unsplash.com/photo-1585992629739-89f81ec40ef8?w=600&auto=format&fit=crop&q=80",
                 price=Decimal('145.00'),
                 unit="kg",
@@ -385,7 +385,7 @@ def seed_database():
             Product(
                 farmer_id=farmer3_profile.id,
                 category_id=cat_map["Pulses"],
-                name="Organic Yellow Moong Dal",
+                name="Organic Yellow Lentils",
                 description="Pure native green gram split dal. Gentle on digestion, rich in plant protein.",
                 image_url="https://images.unsplash.com/photo-1515543237350-b3eea1ec8082?w=600&auto=format&fit=crop&q=80",
                 price=Decimal('135.00'),
@@ -401,7 +401,7 @@ def seed_database():
             Product(
                 farmer_id=farmer3_profile.id,
                 category_id=cat_map["Spices"],
-                name="Pure Lakadong Turmeric Powder (High Curcumin)",
+                name="Pure Organic Turmeric Powder",
                 description="Single-estate hand-pounded turmeric powder with >7% natural curcumin content. Natural healing spice.",
                 image_url="https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=600&auto=format&fit=crop&q=80",
                 price=Decimal('220.00'),
@@ -415,7 +415,7 @@ def seed_database():
             Product(
                 farmer_id=farmer3_profile.id,
                 category_id=cat_map["Spices"],
-                name="Guntur Sannam Red Chillies (Stemless)",
+                name="Fiery Red Dried Chillies",
                 description="World-renowned Guntur sun-dried fiery red chillies. Crisp, vibrant red and aromatic.",
                 image_url="https://images.unsplash.com/photo-1588252303782-cb80119abd6d?w=600&auto=format&fit=crop&q=80",
                 price=Decimal('190.00'),

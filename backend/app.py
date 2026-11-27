@@ -19,6 +19,9 @@ from backend.routes.addresses import addresses_bp
 from backend.routes.notifications import notifications_bp
 from backend.routes.support import support_bp
 from backend.routes.admin import admin_bp
+from backend.routes.reviews import reviews_bp
+from backend.routes.communities import communities_bp
+from backend.routes.campaigns import campaigns_bp
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -45,6 +48,9 @@ def create_app(config_class=Config):
     app.register_blueprint(notifications_bp, url_prefix='/api/notifications')
     app.register_blueprint(support_bp, url_prefix='/api/support')
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
+    app.register_blueprint(reviews_bp, url_prefix='/api/reviews')
+    app.register_blueprint(communities_bp, url_prefix='/api/communities')
+    app.register_blueprint(campaigns_bp, url_prefix='/api/campaigns')
 
     # Uploads static route
     @app.route('/uploads/<path:filename>')
@@ -66,7 +72,7 @@ def create_app(config_class=Config):
             'status': 'healthy',
             'app': 'KisanDirect API',
             'database': 'connected',
-            'version': '1.0.0'
+            'version': '1.1.0'
         })
 
     # JWT Error handlers
