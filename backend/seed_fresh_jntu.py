@@ -68,17 +68,12 @@ PRODUCT_CATALOG = [
     ("Organic Sugarcane Jaggery", "Other Products", "kg", 85, 66, 35, 140, True, "both", "https://images.unsplash.com/photo-1604467794349-0b74285de7e7?w=600&auto=format&fit=crop&q=80"),
 ]
 
+# 4 Apartment Communities near JNTU Metro Station, Hyderabad
 JNTU_APARTMENTS = [
     ("KD-LBZ01", "Lodha Bellezza", "gated_society", "KPHB Phase 4, Near JNTU Metro Station, Hyderabad", "Tower A Security Desk", 17.4932, 78.3915, "500072"),
     ("KD-MLT02", "Malaysian Township", "gated_society", "Rain Tree Park, KPHB Phase 5, Hyderabad", "Clubhouse Parcel Room", 17.4895, 78.3842, "500072"),
     ("KD-VTP03", "Vertex Panache", "apartment", "Nizampet Road, Near JNTU Metro, Hyderabad", "Main Gate Security", 17.5085, 78.3865, "500090"),
     ("KD-VSU04", "Vasavi Urban", "gated_society", "Bachupally-Nizampet Link Road, Hyderabad", "Block C Lobby", 17.5210, 78.3810, "500090"),
-    ("KD-PGM05", "Pragathi Green Meadows", "apartment", "Pragathi Nagar, Kukatpally, Hyderabad", "Gate 1 Drop Point", 17.5155, 78.3980, "500090"),
-    ("KD-IVC06", "Indis Viva City", "gated_society", "Hafeezpet-Kondapur Road, Near JNTU, Hyderabad", "Tower 2 Reception", 17.4820, 78.3680, "500084"),
-    ("KD-BLB07", "Bollineni Bion", "gated_society", "Kothaguda-Kondapur Cross, Hyderabad", "Parcel Lockers Bay", 17.4612, 78.3688, "500084"),
-    ("KD-CCO08", "Cybercity Oriana", "apartment", "Moosapet-Kukatpally Y Junction, Hyderabad", "Main Lobby Desk", 17.4725, 78.4210, "500018"),
-    ("KD-MHM09", "My Home Mangala", "gated_society", "Kondapur Main Road, Hyderabad", "Tower B Security Desk", 17.4589, 78.3621, "500084"),
-    ("KD-HRS10", "Hill Ridge Springs", "gated_society", "Miyapur-Gachibowli Corridor, Hyderabad", "East Gate Kiosk", 17.4945, 78.3652, "500049"),
 ]
 
 FIRST_NAMES = [
@@ -92,7 +87,6 @@ FIRST_NAMES = [
 LAST_NAMES = [
     "Sharma", "Nair", "Kulkarni", "Iyer", "Reddy", "Deshmukh", "Rao", "Menon", "Joshi", "Verma",
     "Kapoor", "Malhotra", "Krishnan", "Choudhary", "Agarwal", "Bansal", "Mishra", "Saxena", "Goud", "Patel",
-    "Naidu", "Varma", "Prasad", "Murthy", "Bhat",
 ]
 
 JNTU_STREETS = [
@@ -102,13 +96,20 @@ JNTU_STREETS = [
     ("Pragathi Nagar Lake Rd", "Pragathi Nagar", "500090", "Near Aleap Circle", 17.5162, 78.3964),
     ("Vasanth Nagar Colony", "Kukatpally", "500085", "Behind JNTU College Gate", 17.4958, 78.3845),
     ("Hydernagar Main Rd", "Hydernagar", "500085", "Near Metro Station Exit B", 17.5015, 78.3782),
-    ("Miyapur Allwyn X Rd", "Miyapur", "500049", "Near Miyapur Metro", 17.4968, 78.3614),
-    ("Hafeezpet Flyover Rd", "Hafeezpet", "500049", "Near Aditya Nagar", 17.4824, 78.3665),
+]
+
+REVIEW_COMMENTS = [
+    "Super fresh harvest! Delivered right on time near JNTU Metro.",
+    "Farm-direct quality is noticeably fresher and sweeter than supermarket produce.",
+    "Clean packaging and accurate weight. Will definitely reorder!",
+    "Great bulk discount for our apartment group, everyone loved it.",
+    "Crisp vegetables harvested the same morning, zero spoilage.",
+    "Polite farmer delivery directly to our security gate.",
 ]
 
 
 def reset_and_seed_fresh():
-    """Purge all non-admin data and seed fresh farmers, products with harvest_date, and 75 JNTU-area consumers."""
+    """Purge all non-admin data and seed 50 JNTU consumers, 4 apartments, 15 farmers, 24 products with harvest_date, and rich order/review history."""
     random.seed(202611)
     today = date.today()
 
@@ -162,7 +163,7 @@ def reset_and_seed_fresh():
             db.session.flush()
         cat_map[name] = cat.id
 
-    # 4. Seed 15 Farmers & 30+ Products (all with harvest_date)
+    # 4. Seed 15 Farmers & 24 Products (all with harvest_date)
     farmers = []
     products = []
     for idx, (fname, farm_name, village, district, pincode, lat, lng) in enumerate(FARMER_SPECS, start=1):
@@ -197,7 +198,7 @@ def reset_and_seed_fresh():
     for idx, spec in enumerate(PRODUCT_CATALOG):
         pname, cat_name, unit, price, bulk_p, min_bulk, avail_qty, is_org, sell_mode, img_url = spec
         fp = farmers[idx % len(farmers)]
-        harvest_dt = today - timedelta(days=idx % 3)  # Today, yesterday, or 2 days ago
+        harvest_dt = today - timedelta(days=idx % 3)
         prod = Product(
             farmer_id=fp.id,
             category_id=cat_map[cat_name],
@@ -222,11 +223,11 @@ def reset_and_seed_fresh():
         db.session.flush()
         products.append(prod)
 
-    # 5. Seed 75 Consumers near JNTU Metro Station, Hyderabad
+    # 5. Seed 50 Consumers near JNTU Metro Station, Hyderabad
     buyers = []
     buyer_addresses = []
-    for idx in range(1, 76):
-        full_name = f"{FIRST_NAMES[(idx - 1) % len(FIRST_NAMES)]} {LAST_NAMES[(idx * 3) % len(LAST_NAMES)]}"
+    for idx in range(1, 51):
+        full_name = f"{FIRST_NAMES[idx - 1]} {LAST_NAMES[(idx * 3) % len(LAST_NAMES)]}"
         u = User(
             full_name=full_name,
             email=f"consumer{idx:02d}@kisandirect.in",
@@ -241,8 +242,7 @@ def reset_and_seed_fresh():
         db.session.flush()
         db.session.add(BuyerProfile(user_id=u.id))
 
-        # Assign address either at one of the 10 apartments (first 60) or near JNTU streets (remaining 15)
-        if idx <= 60:
+        if idx <= 40:
             apt = JNTU_APARTMENTS[(idx - 1) % len(JNTU_APARTMENTS)]
             _, apt_name, _, apt_addr, dropoff, base_lat, base_lng, pincode = apt
             block = random.choice(["Tower A", "Tower B", "Tower C", "Block D"])
@@ -281,7 +281,7 @@ def reset_and_seed_fresh():
         buyers.append(u)
         buyer_addresses.append(addr)
 
-    # 6. Seed the 10 JNTU Apartments as Communities & join first 60 consumers
+    # 6. Seed 4 JNTU Apartment Communities & join first 40 consumers (10 per community)
     communities = []
     for c_idx, spec in enumerate(JNTU_APARTMENTS):
         code, name, ctype, addr_line, dropoff, lat, lng, pincode = spec
@@ -301,7 +301,7 @@ def reset_and_seed_fresh():
         db.session.flush()
         communities.append(comm)
 
-    for b_idx in range(60):
+    for b_idx in range(40):
         comm = communities[b_idx % len(communities)]
         is_admin = b_idx < len(communities)
         block = random.choice(["Tower A", "Tower B", "Tower C"])
@@ -317,16 +317,17 @@ def reset_and_seed_fresh():
         ))
     db.session.flush()
 
-    # 7. Seed 3 active BulkCampaigns targeting JNTU apartments
-    for c_i in range(3):
+    # 7. Seed 4 BulkCampaigns & linked CommunityOrders (3 active with timers, 1 completed & price-distributed)
+    for c_i in range(4):
         prod = products[c_i]
+        is_completed_pool = (c_i == 3)
         camp = BulkCampaign(
             farmer_id=prod.farmer_id,
             product_id=prod.id,
             mode="supply_campaign",
-            total_stock_kg=Decimal("120.00"),
+            total_stock_kg=Decimal("100.00"),
             min_bulk_kg=prod.min_bulk_quantity,
-            allocated_kg=Decimal("35.00"),
+            allocated_kg=Decimal("85.00") if is_completed_pool else Decimal("45.00"),
             base_price=prod.price,
             tier_30_price=(prod.price * Decimal("0.90")).quantize(Decimal("0.01")),
             tier_80_price=(prod.price * Decimal("0.80")).quantize(Decimal("0.01")),
@@ -335,55 +336,70 @@ def reset_and_seed_fresh():
             max_delivery_km=prod.max_delivery_km or Decimal("18.00"),
             reservation_agreed=True,
             duration_minutes=720,
-            starts_at=datetime.utcnow(),
-            expires_at=datetime.utcnow() + timedelta(hours=12),
-            status="active",
+            starts_at=datetime.utcnow() - timedelta(hours=2),
+            expires_at=datetime.utcnow() + timedelta(hours=10),
+            status="completed" if is_completed_pool else "active",
         )
         db.session.add(camp)
         db.session.flush()
-        for target_comm in communities[c_i * 2:(c_i * 2) + 3]:
+
+        for target_comm in communities:
             db.session.add(CampaignTargetCommunity(campaign_id=camp.id, community_id=target_comm.id))
+            locked_p = (prod.price * Decimal("0.80")).quantize(Decimal("0.01")) if is_completed_pool else None
             co = CommunityOrder(
                 community_id=target_comm.id,
                 campaign_id=camp.id,
                 product_id=prod.id,
                 initiated_by_user_id=target_comm.admin_user_id,
-                title_note=f"Live JNTU Apartment Pool for {prod.name} (COD until completion)",
+                title_note=f"JNTU Apartment Group Pool for {prod.name} (COD until completion)",
                 target_qty_kg=camp.total_stock_kg,
-                current_qty_kg=Decimal("35.00"),
-                status="campaign_active",
-                expires_at=datetime.utcnow() + timedelta(hours=12),
+                current_qty_kg=Decimal("85.00") if is_completed_pool else Decimal("45.00"),
+                status="completed" if is_completed_pool else "campaign_active",
+                price_distributed=is_completed_pool,
+                final_unit_price=locked_p,
+                expires_at=datetime.utcnow() + timedelta(hours=10),
             )
             db.session.add(co)
             db.session.flush()
-            comm_members = CommunityMember.query.filter_by(community_id=target_comm.id, status="active").limit(3).all()
+
+            comm_members = CommunityMember.query.filter_by(community_id=target_comm.id, status="active").limit(6).all()
             for m_idx, cm in enumerate(comm_members):
                 db.session.add(CommunityOrderItem(
                     community_order_id=co.id,
                     user_id=cm.user_id,
-                    quantity_kg=Decimal(str(10 + m_idx * 5)),
+                    quantity_kg=Decimal(str(5 + (m_idx % 3) * 5)),
+                    unit_price_locked=locked_p,
                     delivery_landmark=f"{cm.block_name or 'Tower A'} {cm.flat_number or ''}".strip(),
                     contact_phone=cm.user.mobile_number if cm.user else "",
-                    payment_status="pending_cod",
+                    payment_status="awaiting_choice" if is_completed_pool else "pending_cod",
                     payment_method="COD",
                 ))
-                db.session.add(Notification(
-                    user_id=cm.user_id,
-                    title=f"Live Apartment Deal: {prod.name}",
-                    message=f"Join {target_comm.name} group pool before timer ends to unlock ₹{float(prod.bulk_price):.0f}/{prod.unit}!",
-                ))
+                if c_i == 0:
+                    db.session.add(Notification(
+                        user_id=cm.user_id,
+                        title=f"Live Apartment Deal: {prod.name}",
+                        message=f"6/10 neighbors joined in {target_comm.name}. Add your share before timer ends!",
+                    ))
 
-    # 8. Seed sample completed & confirmed Orders + ProductReviews + CommunityReviews
-    for o_i in range(5):
-        buyer = buyers[o_i]
-        addr = buyer_addresses[o_i]
-        prod = products[o_i]
-        qty = Decimal("3.00")
+    # 8. Seed 25 Past & Active Orders + 20 ProductReviews + OrderFeedbacks
+    for o_i in range(25):
+        buyer = buyers[o_i % len(buyers)]
+        addr = buyer_addresses[o_i % len(buyer_addresses)]
+        prod = products[o_i % len(products)]
+        qty = Decimal(str(random.randint(2, 6)))
         sub = prod.price * qty
         deliv = Decimal("0.00") if sub >= Decimal("500.00") else Decimal("40.00")
         tot = sub + deliv
-        ord_num = f"KD-{today.strftime('%Y%m%d')}-FR{o_i + 1:04d}"
-        status = "Delivered" if o_i < 3 else "Confirmed"
+        days_ago = max(0, 18 - o_i)
+        created_dt = datetime.utcnow() - timedelta(days=days_ago, hours=o_i % 6)
+        ord_num = f"KD-{(today - timedelta(days=days_ago)).strftime('%Y%m%d')}-FR{o_i + 1:04d}"
+
+        if o_i < 18:
+            status = "Delivered"
+        elif o_i < 23:
+            status = "Confirmed"
+        else:
+            status = "Packed"
 
         order = Order(
             order_number=ord_num,
@@ -394,7 +410,8 @@ def reset_and_seed_fresh():
             total_amount=tot,
             payment_status="Successful" if status == "Delivered" else "Pending",
             order_status=status,
-            payment_method="UPI" if status == "Delivered" else "COD",
+            payment_method="UPI" if o_i % 2 == 0 else "COD",
+            created_at=created_dt,
         )
         db.session.add(order)
         db.session.flush()
@@ -404,16 +421,11 @@ def reset_and_seed_fresh():
             farmer_id=prod.farmer_id,
             subtotal=sub,
             status=status,
-            delivery_otp=str(1234 + o_i * 1111),
+            delivery_otp=str(1100 + o_i * 137 % 8899),
+            created_at=created_dt,
         )
         db.session.add(fo)
         db.session.flush()
-
-        db.session.add(Notification(
-            user_id=prod.farmer.user_id,
-            title=f"Order {status}: {ord_num}",
-            message=f"{buyer.full_name} ordered {float(qty)} {prod.unit} of {prod.name} (₹{float(sub):.2f}).",
-        ))
 
         db.session.add(OrderItem(
             order_id=order.id,
@@ -432,6 +444,7 @@ def reset_and_seed_fresh():
             amount=tot,
             status=order.payment_status,
             payment_reference=f"REF-{ord_num}",
+            created_at=created_dt,
         ))
 
         if status == "Delivered":
@@ -440,20 +453,39 @@ def reset_and_seed_fresh():
                 farmer_id=prod.farmer_id,
                 buyer_id=buyer.id,
                 order_id=order.id,
-                rating=5,
-                farmer_rating=5,
-                comment="Super fresh harvest! Delivered right on time near JNTU Metro.",
+                rating=random.choice([4, 5, 5]),
+                farmer_rating=random.choice([4, 5, 5]),
+                comment=REVIEW_COMMENTS[o_i % len(REVIEW_COMMENTS)],
+                created_at=created_dt + timedelta(hours=3),
+            ))
+            if o_i < 10:
+                db.session.add(OrderFeedback(
+                    order_id=order.id,
+                    buyer_id=buyer.id,
+                    delivery_rating=5,
+                    freshness_rating=5,
+                    comment="On-time farm delivery near JNTU Metro.",
+                    created_at=created_dt + timedelta(hours=4),
+                ))
+        else:
+            db.session.add(Notification(
+                user_id=prod.farmer.user_id,
+                title=f"Order {status}: {ord_num}",
+                message=f"{buyer.full_name} ordered {float(qty)} {prod.unit} of {prod.name} (₹{float(sub):.2f}).",
             ))
 
-    for r_i in range(4):
+    # 9. Seed 12 CommunityReviews across the 4 apartments
+    for r_i in range(12):
+        comm = communities[r_i % len(communities)]
+        farmer = farmers[r_i % len(farmers)]
         db.session.add(CommunityReview(
-            community_id=communities[r_i].id,
-            farmer_id=farmers[r_i].id,
-            rating=5,
+            community_id=comm.id,
+            farmer_id=farmer.id,
+            rating=random.choice([4, 5, 5]),
             payment_score=5,
             pickup_score=5,
-            communication_score=5,
-            comment="Smooth bulk drop-off at apartment security desk and instant settlement.",
+            communication_score=random.choice([4, 5]),
+            comment=f"Great coordination at {comm.name} ({comm.dropoff_point}). Smooth bulk drop-off!",
         ))
 
     db.session.commit()
@@ -462,6 +494,9 @@ def reset_and_seed_fresh():
         "consumers": len(buyers),
         "apartments": len(communities),
         "products": len(products),
+        "orders": 25,
+        "product_reviews": 18,
+        "community_reviews": 12,
         "harvest_date_all_set": True,
     }
 
