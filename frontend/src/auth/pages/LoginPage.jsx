@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Lock, Mail, Phone, ArrowRight, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { BackButton } from '../../shared';
+import { BackButton, PasswordInput } from '../../shared';
 
 // Background Image & Brand Assets
 import bg1 from '../../assets/images/bg1_hd.jpg';
@@ -94,14 +94,13 @@ const LoginPage = () => {
 
   return (
     <div
-      className="min-h-screen min-h-[100dvh] w-full relative flex flex-col justify-center items-center px-4 py-6 sm:p-6 bg-cover bg-center bg-no-repeat overflow-y-auto"
+      className="min-h-screen min-h-[100dvh] w-full relative flex flex-col justify-start sm:justify-center items-center px-3.5 sm:px-6 py-4 sm:py-6 bg-cover bg-center bg-no-repeat overflow-y-auto overflow-x-hidden"
       style={{
         backgroundImage: `url(${bg1})`,
-        backgroundAttachment: 'fixed',
-        paddingTop: 'max(1.5rem, env(safe-area-inset-top, 0px))',
-        paddingBottom: 'max(3rem, calc(env(safe-area-inset-bottom, 0px) + 2rem))',
-        paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
-        paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))'
+        paddingTop: 'max(1rem, env(safe-area-inset-top, 0px))',
+        paddingBottom: 'max(2rem, calc(env(safe-area-inset-bottom, 0px) + 1.5rem))',
+        paddingLeft: 'max(0.875rem, env(safe-area-inset-left, 0px))',
+        paddingRight: 'max(0.875rem, env(safe-area-inset-right, 0px))'
       }}
     >
       {/* Background Dimmer Overlay - Zero Blur for 100% Crisp Visual Fidelity */}
@@ -162,13 +161,12 @@ const LoginPage = () => {
               </button>
             </div>
             <div className="relative">
-              <Lock className="w-4 h-4 text-kisan-muted absolute left-3.5 top-3.5" />
-              <input
-                type="password"
+              <Lock className="w-4 h-4 text-kisan-muted absolute left-3.5 top-3.5 z-10 pointer-events-none" />
+              <PasswordInput
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={t('enterPassword')}
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-50/90 border border-kisan-border rounded-xl text-xs text-kisan-dark focus:outline-none focus:border-kisan-primary focus:bg-white transition-colors"
+                className="w-full pl-10 py-2.5 bg-gray-50/90 border border-kisan-border rounded-xl text-xs text-kisan-dark focus:outline-none focus:border-kisan-primary focus:bg-white transition-colors"
                 required
               />
             </div>

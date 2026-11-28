@@ -18,7 +18,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useNavigation } from '../../contexts/NavigationContext';
-import { BackButton, RapidoMapPicker } from '../../shared';
+import { BackButton, RapidoMapPicker, PasswordInput } from '../../shared';
 import { PINCODE_MANDALS_MAP } from '../../data/pincodeLocations';
 import { getCurrentLocation } from '../../utils/geolocation';
 
@@ -358,14 +358,13 @@ const BuyerRegisterPage = () => {
 
   return (
     <div
-      className="min-h-screen min-h-[100dvh] w-full relative flex flex-col justify-center items-center px-4 py-6 sm:p-6 bg-cover bg-center bg-no-repeat overflow-y-auto"
+      className="min-h-screen min-h-[100dvh] w-full relative flex flex-col justify-start sm:justify-center items-center px-3.5 sm:px-6 py-4 sm:py-6 bg-cover bg-center bg-no-repeat overflow-y-auto overflow-x-hidden"
       style={{
         backgroundImage: `url(${bg1})`,
-        backgroundAttachment: 'fixed',
-        paddingTop: 'max(1.5rem, env(safe-area-inset-top, 0px))',
-        paddingBottom: 'max(3rem, calc(env(safe-area-inset-bottom, 0px) + 2rem))',
-        paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
-        paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',
+        paddingTop: 'max(1rem, env(safe-area-inset-top, 0px))',
+        paddingBottom: 'max(2rem, calc(env(safe-area-inset-bottom, 0px) + 1.5rem))',
+        paddingLeft: 'max(0.875rem, env(safe-area-inset-left, 0px))',
+        paddingRight: 'max(0.875rem, env(safe-area-inset-right, 0px))',
       }}
     >
       {/* Background Dimmer Overlay */}
@@ -500,13 +499,12 @@ const BuyerRegisterPage = () => {
                   Password <span className="text-red-500 font-black">*</span>
                 </label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-kisan-muted absolute left-3 top-3" />
-                  <input
-                    type="password"
+                  <Lock className="w-4 h-4 text-kisan-muted absolute left-3 top-3 z-10 pointer-events-none" />
+                  <PasswordInput
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     placeholder="Min 6 characters"
-                    className="w-full pl-9 pr-3 py-2 bg-gray-50/90 border border-kisan-border rounded-xl focus:outline-none focus:border-kisan-primary"
+                    className="w-full pl-9 py-2 bg-gray-50/90 border border-kisan-border rounded-xl focus:outline-none focus:border-kisan-primary"
                     required
                   />
                 </div>
@@ -517,15 +515,14 @@ const BuyerRegisterPage = () => {
                   Confirm Password <span className="text-red-500 font-black">*</span>
                 </label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-kisan-muted absolute left-3 top-3" />
-                  <input
-                    type="password"
+                  <Lock className="w-4 h-4 text-kisan-muted absolute left-3 top-3 z-10 pointer-events-none" />
+                  <PasswordInput
                     value={formData.confirm_password}
                     onChange={(e) =>
                       setFormData({ ...formData, confirm_password: e.target.value })
                     }
                     placeholder="Re-enter password"
-                    className="w-full pl-9 pr-3 py-2 bg-gray-50/90 border border-kisan-border rounded-xl focus:outline-none focus:border-kisan-primary"
+                    className="w-full pl-9 py-2 bg-gray-50/90 border border-kisan-border rounded-xl focus:outline-none focus:border-kisan-primary"
                     required
                   />
                 </div>

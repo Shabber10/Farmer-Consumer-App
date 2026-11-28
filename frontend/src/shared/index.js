@@ -7,3 +7,4 @@ export { default as MobileHeader } from './components/MobileHeader';
 export { default as MobilePhoneFrame } from './components/MobilePhoneFrame';
 export { default as OrderTimeline } from './components/OrderTimeline';
 export { default as RapidoMapPicker } from './components/RapidoMapPicker';
+export { default as PasswordInput } from './components/PasswordInput';

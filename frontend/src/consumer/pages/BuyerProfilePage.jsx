@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { PasswordInput } from '../../shared';
 import api from '../../services/api';
 
 const BuyerProfilePage = () => {
@@ -516,8 +517,7 @@ const BuyerProfilePage = () => {
             <form onSubmit={handleChangePassword} className="mt-3 pt-3 border-t border-gray-100 space-y-2 text-xs animate-slide-up">
               <div>
                 <label className="block text-[10px] font-bold text-gray-500 mb-0.5">{t('currentPassword') || 'Current Password'}</label>
-                <input
-                  type="password"
+                <PasswordInput
                   placeholder="Enter current password"
                   value={passwordForm.current_password}
                   onChange={(e) => setPasswordForm({ ...passwordForm, current_password: e.target.value })}
@@ -525,11 +525,10 @@ const BuyerProfilePage = () => {
                   required
                 />
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
                   <label className="block text-[10px] font-bold text-gray-500 mb-0.5">{t('newPassword') || 'New Password'}</label>
-                  <input
-                    type="password"
+                  <PasswordInput
                     placeholder="Min 6 characters"
                     value={passwordForm.new_password}
                     onChange={(e) => setPasswordForm({ ...passwordForm, new_password: e.target.value })}
@@ -539,8 +538,7 @@ const BuyerProfilePage = () => {
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-gray-500 mb-0.5">{t('confirmPassword') || 'Confirm'}</label>
-                  <input
-                    type="password"
+                  <PasswordInput
                     placeholder="Re-enter password"
                     value={passwordForm.confirm_password}
                     onChange={(e) => setPasswordForm({ ...passwordForm, confirm_password: e.target.value })}

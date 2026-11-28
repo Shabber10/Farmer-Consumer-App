@@ -83,14 +83,13 @@ const VerifyEmailPage = () => {
 
   return (
     <div
-      className="min-h-screen min-h-[100dvh] w-full relative flex flex-col justify-center items-center px-4 py-6 sm:p-6 bg-cover bg-center bg-no-repeat overflow-y-auto"
+      className="min-h-screen min-h-[100dvh] w-full relative flex flex-col justify-start sm:justify-center items-center px-3.5 sm:px-6 py-4 sm:py-6 bg-cover bg-center bg-no-repeat overflow-y-auto overflow-x-hidden"
       style={{
         backgroundImage: `url(${bg1})`,
-        backgroundAttachment: 'fixed',
-        paddingTop: 'max(1.5rem, env(safe-area-inset-top, 0px))',
+        paddingTop: 'max(1rem, env(safe-area-inset-top, 0px))',
         paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom, 0px))',
-        paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
-        paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',
+        paddingLeft: 'max(0.875rem, env(safe-area-inset-left, 0px))',
+        paddingRight: 'max(0.875rem, env(safe-area-inset-right, 0px))',
       }}
     >
       {/* Background Dimmer Overlay */}

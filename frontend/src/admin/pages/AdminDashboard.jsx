@@ -6,7 +6,7 @@ import {
   Trash2, Edit, Plus, Layers, Send, AlertTriangle, X
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { PageBackground } from '../../shared';
+import { PageBackground, PasswordInput } from '../../shared';
 import bg9 from '../../assets/images/bg9_hd.jpg';
 import api, { getImageUrl } from '../../services/api';
 
@@ -1225,8 +1225,7 @@ const AdminDashboard = () => {
               </div>
               <div>
                 <label className="block font-bold text-kisan-dark mb-1">Password</label>
-                <input
-                  type="password"
+                <PasswordInput
                   required
                   placeholder="Minimum 6 characters"
                   value={userFormData.password}
@@ -1324,8 +1323,7 @@ const AdminDashboard = () => {
               </div>
               <div>
                 <label className="block font-bold text-kisan-dark mb-1">Reset Password (Optional)</label>
-                <input
-                  type="password"
+                <PasswordInput
                   placeholder="Leave empty to keep current password"
                   value={userFormData.password}
                   onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}

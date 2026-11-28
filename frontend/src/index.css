@@ -30,6 +30,15 @@
     -webkit-tap-highlight-color: transparent;
     overflow-x: hidden;
   }
+
+  img, video, canvas, svg {
+    max-width: 100%;
+  }
+
+  input, select, textarea {
+    max-width: 100%;
+    min-width: 0;
+  }
 }
 
 /* Safe area utilities */
