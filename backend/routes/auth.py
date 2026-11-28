@@ -355,6 +355,69 @@ def change_password():
     db.session.commit()
     return jsonify({'message': 'Password changed successfully'}), 200
 
+@auth_bp.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    data = request.get_json() or {}
+    identifier = (data.get('identifier') or data.get('email') or data.get('mobile_number') or '').strip()
+    if not identifier:
+        return jsonify({'error': 'Registered email or mobile number is required'}), 400
+
+    ident_lower = identifier.lower()
+    user = User.query.filter(
+        (User.email == ident_lower) | (User.mobile_number == identifier)
+    ).first()
+    if not user:
+        return jsonify({'error': 'No account found with that email or mobile number'}), 404
+
+    otp = str(random.randint(100000, 999999))
+    OTP_STORE[f"reset:{user.id}"] = {
+        'otp': otp,
+        'expires_at': time.time() + 600,
+    }
+
+    return jsonify({
+        'message': f'Password reset OTP generated for {user.email or user.mobile_number}',
+        'identifier': identifier,
+        'dev_otp': otp,
+        'expires_in': 600,
+    }), 200
+
+
+@auth_bp.route('/reset-password', methods=['POST'])
+def reset_password():
+    data = request.get_json() or {}
+    identifier = (data.get('identifier') or data.get('email') or data.get('mobile_number') or '').strip()
+    otp = (data.get('otp') or '').strip()
+    new_password = data.get('new_password') or ''
+    confirm_password = data.get('confirm_password') or ''
+
+    if not identifier or not otp or not new_password:
+        return jsonify({'error': 'Identifier, OTP, and new password are required'}), 400
+    if len(new_password) < 6:
+        return jsonify({'error': 'New password must be at least 6 characters'}), 400
+    if confirm_password and new_password != confirm_password:
+        return jsonify({'error': 'Passwords do not match'}), 400
+
+    ident_lower = identifier.lower()
+    user = User.query.filter(
+        (User.email == ident_lower) | (User.mobile_number == identifier)
+    ).first()
+    if not user:
+        return jsonify({'error': 'No account found with that email or mobile number'}), 404
+
+    stored = OTP_STORE.get(f"reset:{user.id}")
+    if not stored or stored['otp'] != otp:
+        return jsonify({'error': 'Invalid OTP code. Please request a new one.'}), 400
+    if time.time() > stored['expires_at']:
+        OTP_STORE.pop(f"reset:{user.id}", None)
+        return jsonify({'error': 'OTP has expired. Please request a new one.'}), 400
+
+    user.set_password(new_password)
+    db.session.commit()
+    OTP_STORE.pop(f"reset:{user.id}", None)
+    return jsonify({'message': 'Password reset successful. You can now log in with your new password.'}), 200
+
+
 @auth_bp.route('/logout', methods=['POST'])
 def logout():
     return jsonify({'message': 'Logged out successfully'}), 200
