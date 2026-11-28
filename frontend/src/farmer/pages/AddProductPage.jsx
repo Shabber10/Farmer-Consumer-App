@@ -144,13 +144,11 @@ const AddProductPage = () => {
       const availQty = parseFloat(formData.available_quantity);
 
       if (isNaN(bulkPrice) || isNaN(individualPrice) || bulkPrice >= individualPrice) {
-        setError('Bulk price must be lower than the individual/solo price.');
         setSubmitting(false);
         return;
       }
 
       if (isNaN(availQty) || isNaN(minBulkQty) || availQty <= minBulkQty) {
-        setError('Available quantity must be greater than the minimum bulk quantity.');
         setSubmitting(false);
         return;
       }
@@ -332,9 +330,22 @@ const AddProductPage = () => {
               value={formData.available_quantity}
               onChange={(e) => setFormData({ ...formData, available_quantity: e.target.value })}
               placeholder="e.g. 500"
-              className="w-full px-3.5 py-2.5 bg-gray-50 border border-kisan-border rounded-xl focus:outline-none focus:border-kisan-primary text-sm font-bold"
+              className={`w-full px-3.5 py-2.5 bg-gray-50 border rounded-xl focus:outline-none text-sm font-bold ${
+                formData.available_quantity !== '' &&
+                formData.min_bulk_quantity !== '' &&
+                parseFloat(formData.available_quantity) <= parseFloat(formData.min_bulk_quantity)
+                  ? 'border-red-500 focus:border-red-600'
+                  : 'border-kisan-border focus:border-kisan-primary'
+              }`}
               required
             />
+            {formData.available_quantity !== '' &&
+              formData.min_bulk_quantity !== '' &&
+              parseFloat(formData.available_quantity) <= parseFloat(formData.min_bulk_quantity) && (
+                <p className="text-[10px] text-red-600 font-bold mt-1">
+                  Must be greater than Min Bulk ({formData.min_bulk_quantity} {formData.unit})
+                </p>
+              )}
           </div>
         </div>
 
@@ -362,10 +373,24 @@ const AddProductPage = () => {
                 value={formData.bulk_price}
                 onChange={(e) => setFormData({ ...formData, bulk_price: e.target.value })}
                 placeholder={formData.price ? `e.g. ${Math.round(formData.price * 0.75)}` : 'e.g. 15.00'}
-                className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-xl focus:outline-none focus:border-emerald-600 text-xs font-bold text-emerald-900"
+                className={`w-full px-3 py-2 bg-white border rounded-xl focus:outline-none text-xs font-bold text-emerald-900 ${
+                  formData.bulk_price !== '' &&
+                  formData.price !== '' &&
+                  parseFloat(formData.bulk_price) >= parseFloat(formData.price)
+                    ? 'border-red-500 focus:border-red-600'
+                    : 'border-emerald-300 focus:border-emerald-600'
+                }`}
                 required
               />
-              <span className="text-[9px] text-emerald-600 block mt-0.5">Shown to residential communities</span>
+              {formData.bulk_price !== '' &&
+              formData.price !== '' &&
+              parseFloat(formData.bulk_price) >= parseFloat(formData.price) ? (
+                <span className="text-[10px] text-red-600 font-bold block mt-0.5">
+                  Bulk price must be lower than solo price (₹{formData.price})
+                </span>
+              ) : (
+                <span className="text-[9px] text-emerald-600 block mt-0.5">Shown to residential communities</span>
+              )}
             </div>
 
             <div>
