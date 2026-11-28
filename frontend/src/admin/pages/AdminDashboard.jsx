@@ -3,17 +3,18 @@ import {
   ShieldCheck, Users, ShoppingBag, Package, TrendingUp, 
   CheckCircle2, XCircle, Search, Filter, RefreshCw, 
   ChevronRight, Phone, Mail, MapPin, Eye, AlertCircle, Headphones,
-  Trash2, Edit, Plus, Layers, Send, AlertTriangle, X
+  Trash2, Edit, Plus, Layers, Send, AlertTriangle, X,
+  Building2, CreditCard, Star, Download, LogOut
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { PageBackground, PasswordInput } from '../../shared';
 import bg9 from '../../assets/images/bg9_hd.jpg';
-import api, { getImageUrl } from '../../services/api';
+import api, { getBaseUrl, getImageUrl } from '../../services/api';
 
 const AdminDashboard = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
-  const [activeTab, setActiveTab] = useState('overview'); // overview, users, products, orders, categories, system, support
+  const [activeTab, setActiveTab] = useState('overview'); // overview, users, products, orders, communities, payments, reviews, categories, support, system
   const [stats, setStats] = useState(null);
   const [recentOrders, setRecentOrders] = useState([]);
   const [usersList, setUsersList] = useState([]);
@@ -21,6 +22,11 @@ const AdminDashboard = () => {
   const [ordersList, setOrdersList] = useState([]);
   const [categoriesList, setCategoriesList] = useState([]);
   const [supportTickets, setSupportTickets] = useState([]);
+  const [communitiesList, setCommunitiesList] = useState([]);
+  const [campaignsList, setCampaignsList] = useState([]);
+  const [paymentsList, setPaymentsList] = useState([]);
+  const [productReviewsList, setProductReviewsList] = useState([]);
+  const [communityReviewsList, setCommunityReviewsList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -99,6 +105,29 @@ const AdminDashboard = () => {
     } catch (e) { console.error(e); }
   };
 
+  const fetchCommunities = async () => {
+    try {
+      const res = await api.get('/api/admin/communities');
+      setCommunitiesList(res.data.communities || []);
+      setCampaignsList(res.data.campaigns || []);
+    } catch (e) { console.error(e); }
+  };
+
+  const fetchPayments = async () => {
+    try {
+      const res = await api.get('/api/admin/payments');
+      setPaymentsList(res.data.payments || []);
+    } catch (e) { console.error(e); }
+  };
+
+  const fetchReviews = async () => {
+    try {
+      const res = await api.get('/api/admin/reviews');
+      setProductReviewsList(res.data.product_reviews || []);
+      setCommunityReviewsList(res.data.community_reviews || []);
+    } catch (e) { console.error(e); }
+  };
+
   const loadAll = async () => {
     setLoading(true);
     await Promise.all([
@@ -107,9 +136,43 @@ const AdminDashboard = () => {
       fetchProducts(),
       fetchOrders(),
       fetchCategories(),
-      fetchSupport()
+      fetchSupport(),
+      fetchCommunities(),
+      fetchPayments(),
+      fetchReviews()
     ]);
     setLoading(false);
+  };
+
+  const handleToggleUserVerify = async (userId) => {
+    try {
+      const res = await api.patch(`/api/admin/users/${userId}/verify`);
+      showNotification(res.data.message);
+      fetchUsers();
+    } catch (err) {
+      showNotification(err.response?.data?.error || 'Failed to toggle verification', 'error');
+    }
+  };
+
+  const handleUpdateCampaignStatus = async (campaignId, status) => {
+    try {
+      const res = await api.patch(`/api/admin/campaigns/${campaignId}/status`, { status });
+      showNotification(res.data.message);
+      fetchCommunities();
+      fetchOverview();
+    } catch (err) {
+      showNotification(err.response?.data?.error || 'Failed to update campaign', 'error');
+    }
+  };
+
+  const handleDeleteReview = async (kind, reviewId) => {
+    try {
+      const res = await api.delete(`/api/admin/reviews/${kind}/${reviewId}`);
+      showNotification(res.data.message);
+      fetchReviews();
+    } catch (err) {
+      showNotification(err.response?.data?.error || 'Failed to delete review', 'error');
+    }
   };
 
   useEffect(() => {
@@ -391,13 +454,29 @@ const AdminDashboard = () => {
             Logged in as <span className="font-bold underline">{user?.email || 'admin@gmail.com'}</span>. You have master privileges to manage, edit, and delete any user, product, or order.
           </p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap items-center gap-2 relative z-10">
           <button
             onClick={loadAll}
-            className="flex items-center space-x-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2.5 rounded-2xl text-xs font-bold border border-white/20 backdrop-blur transition-colors"
+            className="flex items-center space-x-1.5 bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 rounded-2xl text-xs font-bold border border-white/20 backdrop-blur transition-colors"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className="w-3.5 h-3.5" />
             <span>Refresh</span>
+          </button>
+          <a
+            href={`${getBaseUrl()}/api/campaigns/export-excel`}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center space-x-1.5 bg-emerald-500/25 hover:bg-emerald-500/40 text-white px-3.5 py-2 rounded-2xl text-xs font-bold border border-emerald-300/30 backdrop-blur transition-colors"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Export Excel</span>
+          </a>
+          <button
+            onClick={logout}
+            className="flex items-center space-x-1.5 bg-red-500/25 hover:bg-red-500/40 text-white px-3.5 py-2 rounded-2xl text-xs font-bold border border-red-300/30 backdrop-blur transition-colors"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Logout</span>
           </button>
         </div>
       </div>
@@ -482,6 +561,9 @@ const AdminDashboard = () => {
           { id: 'users', label: `Users (${usersList.length})`, icon: Users },
           { id: 'products', label: `Produce (${productsList.length})`, icon: ShoppingBag },
           { id: 'orders', label: `Orders (${ordersList.length})`, icon: Package },
+          { id: 'communities', label: `Apartments (${communitiesList.length})`, icon: Building2 },
+          { id: 'payments', label: `Payments (${paymentsList.length})`, icon: CreditCard },
+          { id: 'reviews', label: `Reviews (${productReviewsList.length + communityReviewsList.length})`, icon: Star },
           { id: 'categories', label: `Categories (${categoriesList.length})`, icon: Layers },
           { id: 'support', label: `Support (${supportTickets.length})`, icon: Headphones },
           { id: 'system', label: 'System Controls', icon: ShieldCheck },
@@ -744,6 +826,18 @@ const AdminDashboard = () => {
                       {u.id !== user?.id && (
                         <>
                           <button
+                            onClick={() => handleToggleUserVerify(u.id)}
+                            className={`text-[10px] font-bold px-2 py-1 rounded-lg transition-colors ${
+                              u.is_verified
+                                ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                                : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                            }`}
+                            title={u.is_verified ? 'Verified User' : 'Verify User'}
+                          >
+                            {u.is_verified ? 'Verified' : 'Verify'}
+                          </button>
+
+                          <button
                             onClick={() => handleToggleUserStatus(u.id)}
                             className={`text-[10px] font-bold px-2 py-1 rounded-lg transition-colors ${
                               u.is_active
@@ -848,7 +942,15 @@ const AdminDashboard = () => {
                         )}
                         <div>
                           <p>{p.name}</p>
-                          {p.is_organic && <span className="text-[9px] text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.2 rounded">Organic</span>}
+                          <div className="flex flex-wrap gap-1 mt-0.5">
+                            {p.is_organic && <span className="text-[9px] text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.2 rounded">Organic</span>}
+                            <span className="text-[9px] text-blue-700 font-bold bg-blue-50 px-1.5 py-0.2 rounded">
+                              {p.selling_mode === 'apartments_only' ? 'Apartments Only' : p.selling_mode === 'individual_only' ? 'Individual Only' : 'Bulk & Individual'}
+                            </span>
+                            {p.bulk_disabled && (
+                              <span className="text-[9px] text-amber-800 font-bold bg-amber-50 px-1.5 py-0.2 rounded">Bulk Stopped</span>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className="py-3 text-kisan-muted">{p.category_name}</td>
@@ -1083,6 +1185,189 @@ const AdminDashboard = () => {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* TAB: APARTMENTS & BULK CAMPAIGNS                         */}
+      {/* ======================================================== */}
+      {activeTab === 'communities' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-3xl p-6 border border-kisan-border shadow-card space-y-4">
+            <h2 className="text-base font-bold text-kisan-dark">
+              Registered Apartments / Communities ({communitiesList.length})
+            </h2>
+            {communitiesList.length === 0 ? (
+              <p className="text-xs text-kisan-muted">No communities created yet.</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {communitiesList.map((c) => (
+                  <div key={c.id} className="p-4 rounded-2xl border border-kisan-border bg-gray-50/60 space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-extrabold text-kisan-dark">{c.name}</span>
+                      <span className="font-mono text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                        {c.community_code}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-kisan-muted">{c.address_line || c.dropoff_point}</p>
+                    <p className="text-[11px] font-semibold text-kisan-primary">
+                      {c.members_count || 0} members • Rating: {c.avg_farmer_rating || 0}/5
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-3xl p-6 border border-kisan-border shadow-card space-y-4">
+            <h2 className="text-base font-bold text-kisan-dark">
+              Bulk Campaigns &amp; Timers ({campaignsList.length})
+            </h2>
+            {campaignsList.length === 0 ? (
+              <p className="text-xs text-kisan-muted">No bulk campaigns launched yet.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-gray-100 text-kisan-muted uppercase text-[10px]">
+                      <th className="pb-2">Campaign</th>
+                      <th className="pb-2">Farm</th>
+                      <th className="pb-2">Pool Progress</th>
+                      <th className="pb-2">Expires</th>
+                      <th className="pb-2">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {campaignsList.map((camp) => (
+                      <tr key={camp.id}>
+                        <td className="py-3 font-bold text-kisan-dark">{camp.product_name} (#{camp.id})</td>
+                        <td className="py-3 text-kisan-muted">{camp.farm_name}</td>
+                        <td className="py-3 font-semibold">{camp.allocated_kg} / {camp.total_stock_kg} {camp.unit} ({camp.progress_pct}%)</td>
+                        <td className="py-3 text-[11px] text-kisan-muted">{camp.expires_at ? new Date(camp.expires_at).toLocaleString() : 'N/A'}</td>
+                        <td className="py-3">
+                          <select
+                            value={camp.status}
+                            onChange={(e) => handleUpdateCampaignStatus(camp.id, e.target.value)}
+                            className="bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-[11px] font-bold"
+                          >
+                            <option value="active">Active</option>
+                            <option value="locked">Locked</option>
+                            <option value="out_for_delivery">Out for Delivery</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* TAB: PAYMENTS & RAZORPAY TRANSACTIONS                    */}
+      {/* ======================================================== */}
+      {activeTab === 'payments' && (
+        <div className="bg-white rounded-3xl p-6 border border-kisan-border shadow-card space-y-4">
+          <h2 className="text-base font-bold text-kisan-dark">
+            Payments &amp; Razorpay Transactions ({paymentsList.length})
+          </h2>
+          {paymentsList.length === 0 ? (
+            <p className="text-xs text-kisan-muted">No payment records yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-gray-100 text-kisan-muted uppercase text-[10px]">
+                    <th className="pb-2">Order</th>
+                    <th className="pb-2">Buyer</th>
+                    <th className="pb-2">Provider</th>
+                    <th className="pb-2">Transaction ID</th>
+                    <th className="pb-2">Amount</th>
+                    <th className="pb-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {paymentsList.map((pay) => (
+                    <tr key={pay.id}>
+                      <td className="py-3 font-mono font-bold text-kisan-dark">{pay.order_number}</td>
+                      <td className="py-3">{pay.buyer_name}</td>
+                      <td className="py-3 font-semibold">{pay.payment_provider}</td>
+                      <td className="py-3 font-mono text-[11px] text-kisan-muted">{pay.transaction_id}</td>
+                      <td className="py-3 font-black text-kisan-primary">₹{Number(pay.amount || 0).toFixed(2)}</td>
+                      <td className="py-3">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          pay.status === 'Successful' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                        }`}>
+                          {pay.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* TAB: REVIEWS & MODERATION                                */}
+      {/* ======================================================== */}
+      {activeTab === 'reviews' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white rounded-3xl p-6 border border-kisan-border shadow-card space-y-3">
+            <h2 className="text-base font-bold text-kisan-dark">Product &amp; Farmer Reviews ({productReviewsList.length})</h2>
+            {productReviewsList.length === 0 ? (
+              <p className="text-xs text-kisan-muted">No product reviews yet.</p>
+            ) : (
+              <div className="space-y-2.5">
+                {productReviewsList.map((r) => (
+                  <div key={r.id} className="p-3 rounded-2xl bg-gray-50 border border-gray-200 flex items-start justify-between gap-2 text-xs">
+                    <div>
+                      <p className="font-bold text-kisan-dark">{r.buyer_name} • {r.rating}★</p>
+                      <p className="text-[11px] text-kisan-muted mt-0.5">{r.comment || 'No comment'}</p>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteReview('product', r.id)}
+                      className="text-red-600 hover:bg-red-50 p-1.5 rounded-lg"
+                      title="Delete Review"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-3xl p-6 border border-kisan-border shadow-card space-y-3">
+            <h2 className="text-base font-bold text-kisan-dark">Apartment Community Reviews ({communityReviewsList.length})</h2>
+            {communityReviewsList.length === 0 ? (
+              <p className="text-xs text-kisan-muted">No community reviews yet.</p>
+            ) : (
+              <div className="space-y-2.5">
+                {communityReviewsList.map((r) => (
+                  <div key={r.id} className="p-3 rounded-2xl bg-gray-50 border border-gray-200 flex items-start justify-between gap-2 text-xs">
+                    <div>
+                      <p className="font-bold text-kisan-dark">{r.farm_name || 'Farmer'} → Community #{r.community_id} • {r.rating}★</p>
+                      <p className="text-[11px] text-kisan-muted mt-0.5">{r.comment || 'No comment'}</p>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteReview('community', r.id)}
+                      className="text-red-600 hover:bg-red-50 p-1.5 rounded-lg"
+                      title="Delete Review"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 

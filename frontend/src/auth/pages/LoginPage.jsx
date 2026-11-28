@@ -259,11 +259,22 @@ const LoginPage = () => {
           </button>
         </form>
 
-        {/* Create Account Link */}
-        <div className="mt-6 pt-4 border-t border-gray-100 text-center">
-          <Link to="/select-role" className="text-xs font-bold text-kisan-primary hover:underline">
+        {/* Create Account & Admin Portal Links */}
+        <div className="mt-6 pt-4 border-t border-gray-100 text-center space-y-2">
+          <Link to="/select-role" className="block text-xs font-bold text-kisan-primary hover:underline">
             {t('dontHaveAccount')}
           </Link>
+          <button
+            type="button"
+            onClick={() => {
+              setIdentifier('admin@gmail.com');
+              setPassword('');
+              setError('');
+            }}
+            className="text-[11px] font-bold text-slate-500 hover:text-kisan-dark transition-colors"
+          >
+            Admin Portal Login (admin@gmail.com)
+          </button>
         </div>
       </div>
 

@@ -5,8 +5,9 @@ from decimal import Decimal
 from datetime import datetime
 from backend.extensions import db
 from backend.models import (
-    User, FarmerProfile, BuyerProfile, Address, Product, Category, 
-    Order, FarmerOrder, OrderItem, SupportRequest, Payment, Notification, CartItem
+    User, FarmerProfile, BuyerProfile, Address, Product, Category,
+    Order, FarmerOrder, OrderItem, SupportRequest, Payment, Notification, CartItem,
+    Community, CommunityMember, BulkCampaign, CommunityOrder, ProductReview, CommunityReview
 )
 
 admin_bp = Blueprint('admin', __name__)
@@ -41,6 +42,11 @@ def overview():
     total_orders = Order.query.count()
     total_categories = Category.query.count()
     pending_tickets = SupportRequest.query.filter_by(status='pending').count()
+    total_communities = Community.query.count()
+    active_campaigns = BulkCampaign.query.filter_by(status='active').count()
+    total_payments = Payment.query.count()
+    successful_payments = Payment.query.filter_by(status='Successful').count()
+    total_reviews = ProductReview.query.count() + CommunityReview.query.count()
 
     total_gmv = db.session.query(func.coalesce(func.sum(Order.total_amount), 0))\
         .filter(Order.payment_status.in_(['completed', 'paid', 'Successful', 'COD'])).scalar() or 0
@@ -64,6 +70,11 @@ def overview():
             'total_orders': total_orders,
             'total_categories': total_categories,
             'pending_tickets': pending_tickets,
+            'total_communities': total_communities,
+            'active_campaigns': active_campaigns,
+            'total_payments': total_payments,
+            'successful_payments': successful_payments,
+            'total_reviews': total_reviews,
             'total_gmv': float(total_gmv),
             'status_counts': status_counts
         },
@@ -702,3 +713,125 @@ def broadcast_notification():
 
     db.session.commit()
     return jsonify({'message': f'Broadcast notification sent to {count} users'}), 200
+
+
+# ==========================================
+# 8. MASTER ADMIN: VERIFY, COMMUNITIES, PAYMENTS, REVIEWS
+# ==========================================
+
+@admin_bp.route('/users/<int:user_id>/verify', methods=['PATCH'])
+@jwt_required()
+def toggle_user_verification(user_id):
+    admin = require_admin()
+    if not admin:
+        return jsonify({'error': 'Unauthorized. Admin privilege required.'}), 403
+
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    user.is_verified = not user.is_verified
+    if user.farmer_profile:
+        user.farmer_profile.is_verified = user.is_verified
+    db.session.commit()
+    return jsonify({
+        'message': f"User '{user.full_name}' verification set to {'Verified' if user.is_verified else 'Unverified'}",
+        'user': user.to_dict()
+    }), 200
+
+
+@admin_bp.route('/communities', methods=['GET'])
+@jwt_required()
+def list_communities_and_campaigns():
+    admin = require_admin()
+    if not admin:
+        return jsonify({'error': 'Unauthorized. Admin privilege required.'}), 403
+
+    communities = Community.query.order_by(Community.created_at.desc()).all()
+    campaigns = BulkCampaign.query.order_by(BulkCampaign.created_at.desc()).all()
+    community_orders = CommunityOrder.query.order_by(CommunityOrder.created_at.desc()).limit(50).all()
+
+    return jsonify({
+        'communities': [c.to_dict() for c in communities],
+        'campaigns': [camp.to_dict() for camp in campaigns],
+        'community_orders': [co.to_dict(include_delivery_contacts=True) for co in community_orders],
+    }), 200
+
+
+@admin_bp.route('/campaigns/<int:campaign_id>/status', methods=['PATCH'])
+@jwt_required()
+def update_campaign_status(campaign_id):
+    admin = require_admin()
+    if not admin:
+        return jsonify({'error': 'Unauthorized. Admin privilege required.'}), 403
+
+    camp = BulkCampaign.query.get(campaign_id)
+    if not camp:
+        return jsonify({'error': 'Campaign not found'}), 404
+
+    data = request.get_json() or {}
+    next_status = data.get('status')
+    if next_status not in ('active', 'locked', 'out_for_delivery', 'completed', 'cancelled'):
+        return jsonify({'error': 'Invalid campaign status'}), 400
+
+    camp.status = next_status
+    db.session.commit()
+    return jsonify({'message': f'Campaign #{campaign_id} updated to {next_status}', 'campaign': camp.to_dict()}), 200
+
+
+@admin_bp.route('/payments', methods=['GET'])
+@jwt_required()
+def list_payments():
+    admin = require_admin()
+    if not admin:
+        return jsonify({'error': 'Unauthorized. Admin privilege required.'}), 403
+
+    payments = Payment.query.order_by(Payment.created_at.desc()).all()
+    results = []
+    for p in payments:
+        d = p.to_dict()
+        d['order_number'] = p.order.order_number if p.order else f"#{p.order_id}"
+        d['buyer_name'] = p.order.buyer.full_name if p.order and p.order.buyer else 'Buyer'
+        d['buyer_email'] = p.order.buyer.email if p.order and p.order.buyer else ''
+        d['payment_method'] = p.order.payment_method if p.order else p.payment_provider
+        results.append(d)
+
+    return jsonify({'payments': results}), 200
+
+
+@admin_bp.route('/reviews', methods=['GET'])
+@jwt_required()
+def list_all_reviews():
+    admin = require_admin()
+    if not admin:
+        return jsonify({'error': 'Unauthorized. Admin privilege required.'}), 403
+
+    prod_reviews = ProductReview.query.order_by(ProductReview.created_at.desc()).all()
+    comm_reviews = CommunityReview.query.order_by(CommunityReview.created_at.desc()).all()
+
+    return jsonify({
+        'product_reviews': [r.to_dict() for r in prod_reviews],
+        'community_reviews': [r.to_dict() for r in comm_reviews],
+    }), 200
+
+
+@admin_bp.route('/reviews/<string:kind>/<int:review_id>', methods=['DELETE'])
+@jwt_required()
+def delete_review(kind, review_id):
+    admin = require_admin()
+    if not admin:
+        return jsonify({'error': 'Unauthorized. Admin privilege required.'}), 403
+
+    if kind == 'product':
+        rev = ProductReview.query.get(review_id)
+    elif kind == 'community':
+        rev = CommunityReview.query.get(review_id)
+    else:
+        return jsonify({'error': 'Invalid review kind'}), 400
+
+    if not rev:
+        return jsonify({'error': 'Review not found'}), 404
+
+    db.session.delete(rev)
+    db.session.commit()
+    return jsonify({'message': 'Review deleted successfully'}), 200
