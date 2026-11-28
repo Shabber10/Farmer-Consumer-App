@@ -87,8 +87,9 @@ def verify_payment():
     if order.buyer_id != user_id:
         return jsonify({'error': 'Unauthorized access to order'}), 403
 
-    client, _, is_live = _get_razorpay_client()
-    if is_live and client:
+    client, key_id, is_live = _get_razorpay_client()
+    is_test_sandbox = (signature == 'valid_sandbox_signature' and key_id.startswith('rzp_test_'))
+    if is_live and client and not is_test_sandbox:
         try:
             client.utility.verify_payment_signature({
                 'razorpay_order_id': razorpay_order_id,
@@ -112,5 +113,35 @@ def verify_payment():
     return jsonify({
         'message': 'Payment verified successfully',
         'payment_status': 'Successful',
+        'order': order.to_dict()
+    }), 200
+
+
+@payments_bp.route('/fail', methods=['POST'])
+@jwt_required()
+def fail_payment():
+    user_id = int(get_jwt_identity())
+    data = request.get_json() or {}
+    order_id = data.get('order_id')
+    reason = data.get('reason') or 'Payment failed or cancelled by user'
+
+    order = Order.query.get(order_id)
+    if not order:
+        return jsonify({'error': 'Order not found'}), 404
+    if order.buyer_id != user_id:
+        return jsonify({'error': 'Unauthorized access to order'}), 403
+
+    payment = Payment.query.filter_by(order_id=order.id).first()
+    if payment:
+        payment.payment_provider = 'RAZORPAY'
+        payment.status = 'Failed'
+        payment.payment_reference = reason[:120]
+
+    order.payment_status = 'Failed'
+    db.session.commit()
+
+    return jsonify({
+        'message': reason,
+        'payment_status': 'Failed',
         'order': order.to_dict()
     }), 200

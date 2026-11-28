@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import { MapPin, CreditCard, Banknote, Smartphone, Check, Plus, AlertCircle, ArrowLeft } from 'lucide-react';
 import { PINCODE_MANDALS_MAP } from '../../data/pincodeLocations';
 import { useCart } from '../../contexts/CartContext';
@@ -88,39 +89,54 @@ const CheckoutPage = () => {
         });
         const payData = payRes.data;
 
-        if (payData.mode === 'live_razorpay' && window.Razorpay) {
-          const rp = new window.Razorpay({
-            key: payData.key_id,
-            amount: payData.amount_paise,
-            currency: payData.currency || 'INR',
-            name: 'KisanDirect',
-            description: `Fresh Produce Order ${payData.order_number}`,
-            order_id: payData.razorpay_order_id,
-            handler: async (rpResponse) => {
-              try {
-                const vRes = await api.post('/api/payments/verify', {
-                  order_id: createdOrder.id,
-                  razorpay_order_id: rpResponse.razorpay_order_id,
-                  razorpay_payment_id: rpResponse.razorpay_payment_id,
-                  razorpay_signature: rpResponse.razorpay_signature,
-                });
-                navigate('/buyer/order-success', { state: { order: vRes.data.order } });
-              } catch (vErr) {
-                setError(vErr.response?.data?.error || 'Razorpay payment verification failed');
-              }
-            },
-            theme: { color: '#246B45' },
-            modal: {
-              ondismiss: () => {
-                setError(`Razorpay checkout closed. Order ${createdOrder.order_number} is saved as Pending.`);
+        const useWebRazorpay =
+          !Capacitor.isNativePlatform() &&
+          payData.mode === 'live_razorpay' &&
+          typeof window !== 'undefined' &&
+          window.Razorpay;
+
+        if (useWebRazorpay) {
+          try {
+            const rp = new window.Razorpay({
+              key: payData.key_id,
+              amount: payData.amount_paise,
+              currency: payData.currency || 'INR',
+              name: 'KisanDirect',
+              description: `Fresh Produce Order ${payData.order_number}`,
+              order_id: payData.razorpay_order_id,
+              handler: async (rpResponse) => {
+                try {
+                  const vRes = await api.post('/api/payments/verify', {
+                    order_id: createdOrder.id,
+                    razorpay_order_id: rpResponse.razorpay_order_id,
+                    razorpay_payment_id: rpResponse.razorpay_payment_id,
+                    razorpay_signature: rpResponse.razorpay_signature,
+                  });
+                  navigate('/buyer/order-success', { state: { order: vRes.data.order } });
+                } catch (vErr) {
+                  setError(vErr.response?.data?.error || 'Razorpay payment verification failed');
+                }
               },
-            },
-          });
-          rp.open();
-          return;
+              theme: { color: '#246B45' },
+              modal: {
+                ondismiss: () => {
+                  setError(`Razorpay checkout closed. Order ${createdOrder.order_number} is saved as Pending.`);
+                },
+              },
+            });
+            rp.on('payment.failed', async (resp) => {
+              const reason = resp?.error?.description || 'Razorpay payment failed';
+              await api.post('/api/payments/fail', { order_id: createdOrder.id, reason }).catch(() => {});
+              setError(`${reason} (Order ${createdOrder.order_number})`);
+            });
+            rp.open();
+            return;
+          } catch {
+            // Fall back to in-app Razorpay modal if WebView blocks popup
+          }
         }
 
-        // Sandbox / Test Mode Razorpay Checkout Modal
+        // In-App Razorpay Test Checkout Modal (works in Android WebView & Sandbox with Success/Fail options)
         setRazorpayModal({ payData, order: createdOrder, channel: 'UPI' });
         return;
       }
@@ -130,6 +146,24 @@ const CheckoutPage = () => {
       setError(err.response?.data?.error || 'Failed to place order');
     } finally {
       setPlacing(false);
+    }
+  };
+
+  const handleFailSandboxRazorpay = async () => {
+    if (!razorpayModal) return;
+    try {
+      setVerifyingRp(true);
+      const { payData, order } = razorpayModal;
+      await api.post('/api/payments/fail', {
+        order_id: order.id,
+        reason: `Simulated ${razorpayModal.channel} payment failure`,
+      });
+      setRazorpayModal(null);
+      setError(`Payment Failed for Order ${payData.order_number}. You can retry from My Orders.`);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Could not record payment failure');
+    } finally {
+      setVerifyingRp(false);
     }
   };
 
@@ -443,17 +477,14 @@ const CheckoutPage = () => {
                 </p>
               </div>
 
-              <div className="flex space-x-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <button
                   type="button"
                   disabled={verifyingRp}
-                  onClick={() => {
-                    setRazorpayModal(null);
-                    setError(`Razorpay payment cancelled. Order ${razorpayModal.payData.order_number} is saved as Pending.`);
-                  }}
-                  className="flex-1 py-2.5 border border-gray-300 rounded-xl text-xs font-bold text-gray-600"
+                  onClick={handleFailSandboxRazorpay}
+                  className="flex-1 py-2.5 border border-red-300 bg-red-50 hover:bg-red-100 rounded-xl text-xs font-bold text-red-700 disabled:opacity-50"
                 >
-                  Cancel
+                  Simulate Failure
                 </button>
                 <button
                   type="button"
@@ -461,9 +492,20 @@ const CheckoutPage = () => {
                   onClick={handleConfirmSandboxRazorpay}
                   className="flex-1 py-2.5 bg-[#1565C0] hover:bg-[#0D47A1] text-white rounded-xl text-xs font-bold disabled:opacity-50"
                 >
-                  {verifyingRp ? 'Verifying...' : `Pay ₹${Number(razorpayModal.payData.amount).toFixed(2)}`}
+                  {verifyingRp ? 'Verifying...' : `Success • Pay ₹${Number(razorpayModal.payData.amount).toFixed(2)}`}
                 </button>
               </div>
+              <button
+                type="button"
+                disabled={verifyingRp}
+                onClick={() => {
+                  setRazorpayModal(null);
+                  setError(`Razorpay payment cancelled. Order ${razorpayModal.payData.order_number} is saved as Pending.`);
+                }}
+                className="w-full py-2 text-[11px] font-bold text-gray-500 hover:text-gray-700"
+              >
+                Cancel &amp; Close
+              </button>
             </div>
           </div>
         </div>

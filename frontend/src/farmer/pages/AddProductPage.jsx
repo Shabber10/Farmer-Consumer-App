@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, AlertCircle, Users, Truck } from 'lucide-react';
+import { Upload, Camera, AlertCircle, Users, Truck } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { BackButton } from '../../shared';
 import api from '../../services/api';
@@ -152,20 +152,39 @@ const AddProductPage = () => {
             {imagePreview ? (
               <div className="relative h-44 rounded-xl overflow-hidden">
                 <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-                <label className="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg cursor-pointer">
-                  Change Photo
-                  <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
-                </label>
+                <div className="absolute bottom-2 right-2 flex items-center space-x-2">
+                  <label className="bg-emerald-700/90 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg cursor-pointer flex items-center space-x-1">
+                    <Camera className="w-3.5 h-3.5" />
+                    <span>Camera</span>
+                    <input type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
+                  </label>
+                  <label className="bg-black/75 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg cursor-pointer flex items-center space-x-1">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Gallery</span>
+                    <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+                  </label>
+                </div>
               </div>
             ) : (
-              <label className="cursor-pointer flex flex-col items-center py-6">
-                <div className="w-12 h-12 rounded-full bg-emerald-100 text-kisan-primary flex items-center justify-center mb-2">
-                  <Upload className="w-6 h-6" />
+              <div className="flex flex-col items-center py-5 space-y-3">
+                <div className="w-12 h-12 rounded-full bg-emerald-100 text-kisan-primary flex items-center justify-center">
+                  <Camera className="w-6 h-6" />
                 </div>
-                <span className="font-bold text-kisan-dark text-sm">Click to upload harvest photograph</span>
-                <span className="text-[11px] text-kisan-muted mt-1">PNG, JPG, WEBP up to 10MB</span>
-                <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
-              </label>
+                <span className="font-bold text-kisan-dark text-sm">Capture or upload harvest photograph</span>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <label className="cursor-pointer bg-kisan-primary hover:bg-kisan-dark text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center space-x-1.5 shadow-xs">
+                    <Camera className="w-4 h-4" />
+                    <span>Take Photo (Camera)</span>
+                    <input type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
+                  </label>
+                  <label className="cursor-pointer bg-white border border-kisan-border hover:bg-gray-50 text-kisan-dark font-bold text-xs px-4 py-2 rounded-xl flex items-center space-x-1.5 shadow-xs">
+                    <Upload className="w-4 h-4" />
+                    <span>Choose from Gallery</span>
+                    <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+                  </label>
+                </div>
+                <span className="text-[11px] text-kisan-muted">PNG, JPG, WEBP up to 10MB</span>
+              </div>
             )}
             {uploading && (
               <div className="absolute inset-0 bg-white/80 flex items-center justify-center font-bold text-kisan-primary">
