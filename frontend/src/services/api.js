@@ -10,7 +10,7 @@ export const getBaseUrl = () => {
     const customBackend = localStorage.getItem('kd_backend_url');
     if (customBackend) return customBackend;
     // Default to live Render backend for physical mobile devices
-    return 'https://farmer-consumer-app.onrender.com';
+    return 'https://farmer-consumer-backend.onrender.com';
   }
   return '';
 };
