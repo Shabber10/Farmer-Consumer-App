@@ -418,10 +418,11 @@ const FarmerOrders = () => {
                     <div className="flex flex-wrap items-center gap-2">
                       <input
                         type="text"
-                        maxLength={6}
+                        inputMode="numeric"
+                        maxLength={4}
                         placeholder="Enter 4-digit OTP"
                         value={otpInputs[order.id] || ''}
-                        onChange={(e) => setOtpInputs({ ...otpInputs, [order.id]: e.target.value })}
+                        onChange={(e) => setOtpInputs({ ...otpInputs, [order.id]: e.target.value.replace(/\D/g, '').slice(0, 4) })}
                         className="w-36 px-3 py-2 text-xs font-mono font-bold bg-white border border-amber-300 rounded-xl focus:outline-none focus:border-kisan-primary"
                       />
                       <button

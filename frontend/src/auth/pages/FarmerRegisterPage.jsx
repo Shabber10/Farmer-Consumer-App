@@ -500,8 +500,8 @@ const FarmerRegisterPage = () => {
                 <input
                   type="text"
                   value={formData.full_name}
-                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                  placeholder="e.g. Ramesh Patel"
+                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value.replace(/[^A-Za-z\s.'-]/g, '') })}
+                  placeholder="e.g. Ramesh Patel (letters only)"
                   className="w-full pl-9 pr-3 py-2 bg-gray-50/90 border border-kisan-border rounded-xl focus:outline-none focus:border-kisan-primary"
                   required
                 />
@@ -561,8 +561,8 @@ const FarmerRegisterPage = () => {
               <input
                 type="text"
                 value={formData.farm_name}
-                onChange={(e) => setFormData({ ...formData, farm_name: e.target.value })}
-                placeholder="e.g. Patel Organic Farms (Leave empty to use your name)"
+                onChange={(e) => setFormData({ ...formData, farm_name: e.target.value.replace(/[^A-Za-z\s.'-]/g, '') })}
+                placeholder="e.g. Patel Organic Farms (letters only)"
                 className="w-full px-3 py-2 bg-gray-50/90 border border-kisan-border rounded-xl focus:outline-none focus:border-kisan-primary"
               />
             </div>

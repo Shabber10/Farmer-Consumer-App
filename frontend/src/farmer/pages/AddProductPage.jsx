@@ -260,8 +260,8 @@ const AddProductPage = () => {
           <input
             type="text"
             value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="e.g. Fresh Desi Tomatoes"
+            onChange={(e) => setFormData({ ...formData, name: e.target.value.replace(/[^A-Za-z\s()'/-]/g, '') })}
+            placeholder="e.g. Fresh Desi Tomatoes (letters only)"
             className="w-full px-3.5 py-2.5 bg-gray-50 border border-kisan-border rounded-xl focus:outline-none focus:border-kisan-primary text-sm font-medium"
             required
           />

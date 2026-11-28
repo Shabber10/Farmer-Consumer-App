@@ -224,17 +224,17 @@ const FarmerProfile = () => {
               <input
                 type="text"
                 value={profileForm.full_name}
-                onChange={(e) => setProfileForm({ ...profileForm, full_name: e.target.value })}
+                onChange={(e) => setProfileForm({ ...profileForm, full_name: e.target.value.replace(/[^A-Za-z\s.'-]/g, '') })}
                 className="w-full px-2.5 py-1.5 border rounded-xl text-xs bg-gray-50/60 focus:bg-white"
                 required
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-gray-500 mb-1">Farm Name</label>
+              <label className="block text-[10px] font-bold text-gray-500 mb-1">Farm Name (Letters Only)</label>
               <input
                 type="text"
                 value={profileForm.farm_name}
-                onChange={(e) => setProfileForm({ ...profileForm, farm_name: e.target.value })}
+                onChange={(e) => setProfileForm({ ...profileForm, farm_name: e.target.value.replace(/[^A-Za-z\s.'-]/g, '') })}
                 placeholder="e.g. Green Valley Organic Farm"
                 className="w-full px-2.5 py-1.5 border rounded-xl text-xs bg-gray-50/60 focus:bg-white"
               />
@@ -343,7 +343,7 @@ const FarmerProfile = () => {
                   <input
                     type="text"
                     value={farmLocationForm.village}
-                    onChange={(e) => setFarmLocationForm({ ...farmLocationForm, village: e.target.value })}
+                    onChange={(e) => setFarmLocationForm({ ...farmLocationForm, village: e.target.value.replace(/[^A-Za-z\s.'-]/g, '') })}
                     className="w-full px-2.5 py-1.5 border rounded-lg text-xs bg-gray-50/60 focus:bg-white"
                     required
                   />
@@ -353,7 +353,7 @@ const FarmerProfile = () => {
                   <input
                     type="text"
                     value={farmLocationForm.district}
-                    onChange={(e) => setFarmLocationForm({ ...farmLocationForm, district: e.target.value })}
+                    onChange={(e) => setFarmLocationForm({ ...farmLocationForm, district: e.target.value.replace(/[^A-Za-z\s.'-]/g, '') })}
                     className="w-full px-2.5 py-1.5 border rounded-lg text-xs bg-gray-50/60 focus:bg-white"
                     required
                   />
@@ -365,7 +365,7 @@ const FarmerProfile = () => {
                   <input
                     type="text"
                     value={farmLocationForm.state}
-                    onChange={(e) => setFarmLocationForm({ ...farmLocationForm, state: e.target.value })}
+                    onChange={(e) => setFarmLocationForm({ ...farmLocationForm, state: e.target.value.replace(/[^A-Za-z\s.'-]/g, '') })}
                     className="w-full px-2.5 py-1.5 border rounded-lg text-xs bg-gray-50/60 focus:bg-white"
                     required
                   />
@@ -374,9 +374,10 @@ const FarmerProfile = () => {
                   <label className="block text-[10px] font-bold text-gray-500 mb-0.5">Pincode</label>
                   <input
                     type="text"
+                    inputMode="numeric"
                     maxLength={6}
                     value={farmLocationForm.pincode}
-                    onChange={(e) => setFarmLocationForm({ ...farmLocationForm, pincode: e.target.value })}
+                    onChange={(e) => setFarmLocationForm({ ...farmLocationForm, pincode: e.target.value.replace(/\D/g, '').slice(0, 6) })}
                     className="w-full px-2.5 py-1.5 border rounded-lg text-xs bg-gray-50/60 focus:bg-white"
                     required
                   />

@@ -1,3 +1,4 @@
+import re
 import time
 import random
 from flask import Blueprint, request, jsonify
@@ -103,9 +104,11 @@ def register():
         return jsonify({'error': 'Role must be either farmer or buyer'}), 400
     if not full_name:
         return jsonify({'error': 'Full name is required'}), 400
+    if re.search(r'\d', full_name):
+        return jsonify({'error': 'Full name must contain letters only (no numbers)'}), 400
     if not email:
         return jsonify({'error': 'Email address is mandatory for registration'}), 400
-    if not mobile_number:
+    if not mobile_number or not mobile_number.isdigit() or len(mobile_number) != 10:
         return jsonify({'error': '10-digit mobile number is mandatory for registration'}), 400
     if not password or len(password) < 6:
         return jsonify({'error': 'Password must be at least 6 characters'}), 400
@@ -142,6 +145,11 @@ def register():
             state = data.get('state', '').strip() or 'Telangana'
             pincode = data.get('pincode', '').strip() or '500001'
             farm_name = data.get('farm_name', '').strip() or f"{full_name}'s Farm"
+            for field_label, field_val in [('Farm name', farm_name), ('Village', village), ('District', district), ('State', state)]:
+                if re.search(r'\d', field_val):
+                    return jsonify({'error': f'{field_label} must contain letters only (no numbers)'}), 400
+            if not pincode.isdigit() or len(pincode) != 6:
+                return jsonify({'error': 'Pincode must be a 6-digit number'}), 400
 
             farmer_profile = FarmerProfile(
                 user_id=user.id,
@@ -292,6 +300,8 @@ def update_profile():
     mobile_number = data.get('mobile_number', '').strip() if 'mobile_number' in data else None
 
     if full_name:
+        if re.search(r'\d', full_name):
+            return jsonify({'error': 'Full name must contain letters only (no numbers)'}), 400
         user.full_name = full_name
 
     if email and email != (user.email or ''):
@@ -301,6 +311,8 @@ def update_profile():
         user.email = email
 
     if mobile_number and mobile_number != (user.mobile_number or ''):
+        if not mobile_number.isdigit() or len(mobile_number) != 10:
+            return jsonify({'error': 'Mobile number must be a valid 10-digit number'}), 400
         existing = User.query.filter(User.mobile_number == mobile_number, User.id != user_id).first()
         if existing:
             return jsonify({'error': 'Mobile number is already registered to another account'}), 409
@@ -309,16 +321,17 @@ def update_profile():
     # If farmer, update farm location details
     if user.role == 'farmer' and user.farmer_profile:
         fp = user.farmer_profile
-        if 'farm_name' in data and data['farm_name']:
-            fp.farm_name = data['farm_name'].strip()
-        if 'village' in data and data['village']:
-            fp.village = data['village'].strip()
-        if 'district' in data and data['district']:
-            fp.district = data['district'].strip()
-        if 'state' in data and data['state']:
-            fp.state = data['state'].strip()
+        for field_key, label in [('farm_name', 'Farm name'), ('village', 'Village'), ('district', 'District'), ('state', 'State')]:
+            if field_key in data and data[field_key]:
+                val = data[field_key].strip()
+                if re.search(r'\d', val):
+                    return jsonify({'error': f'{label} must contain letters only (no numbers)'}), 400
+                setattr(fp, field_key, val)
         if 'pincode' in data and data['pincode']:
-            fp.pincode = data['pincode'].strip()
+            pin_val = data['pincode'].strip()
+            if not pin_val.isdigit() or len(pin_val) != 6:
+                return jsonify({'error': 'Pincode must be a 6-digit number'}), 400
+            fp.pincode = pin_val
 
     db.session.commit()
     return jsonify({

@@ -1,4 +1,5 @@
 import os
+import re
 import requests as http_requests
 from decimal import Decimal
 from datetime import datetime
@@ -187,6 +188,8 @@ def create_product():
         max_delivery_km is None
     ):
         return jsonify({'error': 'All product fields including bulk pricing, delivery price per km, and max distance are required'}), 400
+    if re.search(r'\d', name):
+        return jsonify({'error': 'Product name must contain letters only (no numbers)'}), 400
 
     try:
         max_km_val = float(max_delivery_km)
@@ -245,7 +248,10 @@ def update_product(product_id):
 
     data = request.get_json() or {}
     if 'name' in data:
-        product.name = data['name'].strip()
+        new_name = data['name'].strip()
+        if not new_name or re.search(r'\d', new_name):
+            return jsonify({'error': 'Product name must contain letters only (no numbers)'}), 400
+        product.name = new_name
     if 'category_id' in data:
         product.category_id = int(data['category_id'])
     if 'price' in data:

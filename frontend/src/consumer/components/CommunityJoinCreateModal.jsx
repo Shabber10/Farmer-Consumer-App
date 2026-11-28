@@ -54,14 +54,23 @@ const CommunityJoinCreateModal = ({ isOpen, onClose, onSuccess }) => {
 
   if (!isOpen) return null;
 
+  const validateFlatDetails = () => {
+    if (!blockName.trim() || !floorName.trim() || !flatNumber.trim()) {
+      setError('Please enter your private Flat Details (Block / Tower, Floor, and Flat No.) before joining.');
+      return false;
+    }
+    return true;
+  };
+
   const handleJoin = async (communityId) => {
-    setSubmitting(true);
     setError('');
+    if (!validateFlatDetails()) return;
+    setSubmitting(true);
     try {
       const res = await api.post(`/api/communities/${communityId}/join`, {
-        block_name: blockName,
-        floor_name: floorName,
-        flat_number: flatNumber,
+        block_name: blockName.trim(),
+        floor_name: floorName.trim(),
+        flat_number: flatNumber.trim(),
       });
       onSuccess?.(res.data.community, res.data.membership);
       onClose();
@@ -74,15 +83,19 @@ const CommunityJoinCreateModal = ({ isOpen, onClose, onSuccess }) => {
 
   const handleJoinByCode = async (e) => {
     e.preventDefault();
-    if (!joinCode.trim()) return;
-    setSubmitting(true);
     setError('');
+    if (!validateFlatDetails()) return;
+    if (!joinCode.trim()) {
+      setError('Please enter an invite community code.');
+      return;
+    }
+    setSubmitting(true);
     try {
       const res = await api.post('/api/communities/join-by-code', {
         community_code: joinCode.trim().toUpperCase(),
-        block_name: blockName,
-        floor_name: floorName,
-        flat_number: flatNumber,
+        block_name: blockName.trim(),
+        floor_name: floorName.trim(),
+        flat_number: flatNumber.trim(),
       });
       onSuccess?.(res.data.community, res.data.membership);
       onClose();
@@ -95,18 +108,19 @@ const CommunityJoinCreateModal = ({ isOpen, onClose, onSuccess }) => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
+    setError('');
+    if (!validateFlatDetails()) return;
     if (!form.name.trim()) {
-      setError('Apartment / Community name is required.');
+      setError('Apartment / Community name is required (letters only).');
       return;
     }
     setSubmitting(true);
-    setError('');
     try {
       const res = await api.post('/api/communities', {
         ...form,
-        block_name: blockName,
-        floor_name: floorName,
-        flat_number: flatNumber,
+        block_name: blockName.trim(),
+        floor_name: floorName.trim(),
+        flat_number: flatNumber.trim(),
       });
       onSuccess?.(res.data.community, res.data.membership);
       onClose();
@@ -163,28 +177,32 @@ const CommunityJoinCreateModal = ({ isOpen, onClose, onSuccess }) => {
 
         {/* Member Flat / Block Details (private to delivery only) */}
         <div className="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-3 space-y-2">
-          <p className="text-[11px] font-bold text-emerald-900">Your Flat Details (kept private from other members)</p>
+          <p className="text-[11px] font-bold text-emerald-900">Your Flat Details * (kept private from other members)</p>
           <div className="grid grid-cols-3 gap-2">
             <input
               type="text"
-              placeholder="Block / Tower"
+              placeholder="Block / Tower *"
               value={blockName}
-              onChange={(e) => setBlockName(e.target.value)}
+              onChange={(e) => setBlockName(e.target.value.replace(/[^A-Za-z0-9\s-]/g, ''))}
               className="px-2.5 py-2 text-xs bg-white border border-emerald-200 rounded-xl focus:outline-none focus:border-kisan-primary"
+              required
             />
             <input
               type="text"
-              placeholder="Floor"
+              inputMode="numeric"
+              placeholder="Floor (No.) *"
               value={floorName}
-              onChange={(e) => setFloorName(e.target.value)}
+              onChange={(e) => setFloorName(e.target.value.replace(/[^0-9]/g, ''))}
               className="px-2.5 py-2 text-xs bg-white border border-emerald-200 rounded-xl focus:outline-none focus:border-kisan-primary"
+              required
             />
             <input
               type="text"
-              placeholder="Flat No."
+              placeholder="Flat No. *"
               value={flatNumber}
-              onChange={(e) => setFlatNumber(e.target.value)}
+              onChange={(e) => setFlatNumber(e.target.value.replace(/[^A-Za-z0-9-]/g, ''))}
               className="px-2.5 py-2 text-xs bg-white border border-emerald-200 rounded-xl focus:outline-none focus:border-kisan-primary"
+              required
             />
           </div>
         </div>
@@ -277,8 +295,8 @@ const CommunityJoinCreateModal = ({ isOpen, onClose, onSuccess }) => {
                 type="text"
                 required
                 value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="e.g. My Home Mangala / Rainbow Residency"
+                onChange={(e) => setForm({ ...form, name: e.target.value.replace(/[^A-Za-z\s]/g, '') })}
+                placeholder="e.g. My Home Mangala (letters only)"
                 className="w-full px-3 py-2 text-xs border border-kisan-border rounded-xl focus:outline-none focus:border-kisan-primary"
               />
             </div>

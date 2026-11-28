@@ -117,6 +117,19 @@ const CommunityPage = () => {
     }
   };
 
+  const handleLeaveCommunity = async () => {
+    if (!community) return;
+    if (!window.confirm(`Are you sure you want to exit ${community.name}?`)) return;
+    try {
+      const res = await api.post('/api/communities/leave', { community_id: community.id });
+      setToast(res.data.message || 'Exited community.');
+      setTimeout(() => setToast(''), 2500);
+      await fetchMyCommunity();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Could not exit community.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -188,13 +201,22 @@ const CommunityPage = () => {
                   <span className="truncate kd-noun">{community.dropoff_point}</span>
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowJoinModal(true)}
-                className="text-xs font-bold text-emerald-200 hover:text-white underline flex-shrink-0"
-              >
-                Switch
-              </button>
+              <div className="flex items-center space-x-3 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowJoinModal(true)}
+                  className="text-xs font-bold text-emerald-200 hover:text-white underline"
+                >
+                  Switch
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLeaveCommunity}
+                  className="text-xs font-bold bg-red-500/20 hover:bg-red-500/40 text-red-100 border border-red-300/40 px-2.5 py-1 rounded-lg"
+                >
+                  Exit
+                </button>
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/15">
@@ -357,6 +379,51 @@ const CommunityPage = () => {
                         COD until pool completes
                       </span>
                     </div>
+
+                    {/* My Purchase vs Other Neighbors' Purchases Breakdown */}
+                    {(() => {
+                      const otherItems = (order.items || []).filter((it) => it.user_id !== user?.id);
+                      return (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px]">
+                          <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-2.5 space-y-1">
+                            <p className="font-extrabold text-emerald-950">
+                              My Purchase ({myQty} {order.unit})
+                            </p>
+                            {myItems.length === 0 ? (
+                              <p className="text-emerald-700/80">You haven&apos;t purchased in this pool yet.</p>
+                            ) : (
+                              <div className="space-y-1">
+                                {myItems.map((it) => (
+                                  <div key={it.id} className="flex items-center justify-between text-emerald-900">
+                                    <span>{it.quantity_kg} {order.unit}</span>
+                                    <span className="font-bold">
+                                      ₹{(Number(it.quantity_kg) * Number(lockedPrice || 0)).toFixed(2)} • {(it.payment_status || 'COD').replace(/_/g, ' ')}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <div className="bg-gray-50 border border-gray-200 rounded-xl p-2.5 space-y-1">
+                            <p className="font-extrabold text-kisan-dark">
+                              Other Purchases ({otherItems.length})
+                            </p>
+                            {otherItems.length === 0 ? (
+                              <p className="text-gray-500">No other neighbor orders yet.</p>
+                            ) : (
+                              <div className="max-h-24 overflow-y-auto space-y-1">
+                                {otherItems.map((it) => (
+                                  <div key={it.id} className="flex items-center justify-between text-gray-700">
+                                    <span className="truncate kd-noun pr-2">{it.member_name}</span>
+                                    <span className="font-semibold flex-shrink-0">{it.quantity_kg} {order.unit}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     {/* Contribute Qty Control */}
                     {['open_demand', 'campaign_active'].includes(order.status) && !order.price_distributed && (

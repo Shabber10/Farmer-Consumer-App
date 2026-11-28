@@ -68,9 +68,14 @@ def create_community():
     landmark = (data.get('landmark') or '').strip()
     dropoff_point = (data.get('dropoff_point') or 'Main Gate Security').strip()
     community_type = (data.get('community_type') or 'apartment').strip()
+    block_name = (data.get('block_name') or '').strip()
+    floor_name = (data.get('floor_name') or '').strip()
+    flat_number = (data.get('flat_number') or '').strip()
 
     if not name:
         return jsonify({'error': 'Apartment / Community name is required.'}), 400
+    if not block_name or not floor_name or not flat_number:
+        return jsonify({'error': 'Block / Tower, Floor, and Flat No. are required (kept private from other members).'}), 400
 
     lat = data.get('latitude')
     lng = data.get('longitude')
@@ -124,12 +129,21 @@ def join_community(community_id):
     data = request.get_json() or {}
     community = Community.query.get_or_404(community_id)
 
+    block_name = (data.get('block_name') or '').strip()
+    floor_name = (data.get('floor_name') or '').strip()
+    flat_number = (data.get('flat_number') or '').strip()
+    if not block_name or not floor_name or not flat_number:
+        return jsonify({'error': 'Block / Tower, Floor, and Flat No. are required (kept private from other members).'}), 400
+
     existing = CommunityMember.query.filter_by(community_id=community_id, user_id=user_id).first()
     if existing:
         existing.status = 'active'
+        existing.block_name = block_name
+        existing.floor_name = floor_name
+        existing.flat_number = flat_number
         db.session.commit()
         return jsonify({
-            'message': f'Already a member of {community.name}.',
+            'message': f'Joined {community.name}!',
             'community': community.to_dict(),
             'membership': existing.to_dict(include_private=True),
         }), 200
@@ -138,9 +152,9 @@ def join_community(community_id):
         community_id=community_id,
         user_id=user_id,
         role='member',
-        block_name=(data.get('block_name') or '').strip(),
-        floor_name=(data.get('floor_name') or '').strip(),
-        flat_number=(data.get('flat_number') or '').strip(),
+        block_name=block_name,
+        floor_name=floor_name,
+        flat_number=flat_number,
         status='active',
     )
     db.session.add(member)
@@ -161,21 +175,32 @@ def join_by_code():
     if not code:
         return jsonify({'error': 'Community code is required.'}), 400
 
+    block_name = (data.get('block_name') or '').strip()
+    floor_name = (data.get('floor_name') or '').strip()
+    flat_number = (data.get('flat_number') or '').strip()
+    if not block_name or not floor_name or not flat_number:
+        return jsonify({'error': 'Block / Tower, Floor, and Flat No. are required (kept private from other members).'}), 400
+
     community = Community.query.filter_by(community_code=code).first()
     if not community:
         return jsonify({'error': f'No community found with code {code}.'}), 404
 
     existing = CommunityMember.query.filter_by(community_id=community.id, user_id=user_id).first()
     if existing:
+        existing.status = 'active'
+        existing.block_name = block_name
+        existing.floor_name = floor_name
+        existing.flat_number = flat_number
+        db.session.commit()
         return jsonify({'community': community.to_dict(), 'membership': existing.to_dict(include_private=True)}), 200
 
     member = CommunityMember(
         community_id=community.id,
         user_id=user_id,
         role='member',
-        block_name=(data.get('block_name') or '').strip(),
-        floor_name=(data.get('floor_name') or '').strip(),
-        flat_number=(data.get('flat_number') or '').strip(),
+        block_name=block_name,
+        floor_name=floor_name,
+        flat_number=flat_number,
         status='active',
     )
     db.session.add(member)
@@ -185,6 +210,36 @@ def join_by_code():
         'community': community.to_dict(),
         'membership': member.to_dict(include_private=True),
     }), 201
+
+
+@communities_bp.route('/leave', methods=['POST'])
+@jwt_required()
+def leave_community():
+    user_id = int(get_jwt_identity())
+    data = request.get_json() or {}
+    target_comm_id = data.get('community_id')
+    query = CommunityMember.query.filter_by(user_id=user_id, status='active')
+    if target_comm_id:
+        query = query.filter_by(community_id=int(target_comm_id))
+    membership = query.order_by(CommunityMember.joined_at.desc()).first()
+    if not membership:
+        return jsonify({'error': 'You are not currently in any community.'}), 404
+
+    community = membership.community
+    comm_name = community.name if community else 'Community'
+    was_admin = (membership.role == 'admin')
+    comm_id = membership.community_id
+    db.session.delete(membership)
+    db.session.flush()
+
+    if was_admin and community:
+        next_member = CommunityMember.query.filter_by(community_id=comm_id, status='active').order_by(CommunityMember.joined_at.asc()).first()
+        if next_member:
+            next_member.role = 'admin'
+            community.admin_user_id = next_member.user_id
+
+    db.session.commit()
+    return jsonify({'message': f'Exited {comm_name} successfully.'}), 200
 
 
 @communities_bp.route('/my', methods=['GET'])

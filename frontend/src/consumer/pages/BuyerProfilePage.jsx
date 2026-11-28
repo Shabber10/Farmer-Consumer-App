@@ -253,7 +253,7 @@ const BuyerProfilePage = () => {
               <input
                 type="text"
                 value={profileForm.full_name}
-                onChange={(e) => setProfileForm({ ...profileForm, full_name: e.target.value })}
+                onChange={(e) => setProfileForm({ ...profileForm, full_name: e.target.value.replace(/[^A-Za-z\s.'-]/g, '') })}
                 className="w-full px-2.5 py-1.5 border rounded-xl text-xs bg-gray-50/60 focus:bg-white"
                 required
               />
