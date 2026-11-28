@@ -20,6 +20,8 @@ const CheckoutPage = () => {
   const [loading, setLoading] = useState(true);
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState('');
+  const [razorpayModal, setRazorpayModal] = useState(null);
+  const [verifyingRp, setVerifyingRp] = useState(false);
 
   // Add Address Form
   const [showAddAddr, setShowAddAddr] = useState(false);
@@ -76,12 +78,78 @@ const CheckoutPage = () => {
         address_id: selectedAddressId,
         payment_method: paymentMethod
       });
+      const createdOrder = res.data.order;
       await fetchCart();
-      navigate('/buyer/order-success', { state: { order: res.data.order } });
+
+      if (paymentMethod === 'RAZORPAY') {
+        const payRes = await api.post('/api/payments/create', {
+          order_id: createdOrder.id,
+          payment_method: 'RAZORPAY',
+        });
+        const payData = payRes.data;
+
+        if (payData.mode === 'live_razorpay' && window.Razorpay) {
+          const rp = new window.Razorpay({
+            key: payData.key_id,
+            amount: payData.amount_paise,
+            currency: payData.currency || 'INR',
+            name: 'KisanDirect',
+            description: `Fresh Produce Order ${payData.order_number}`,
+            order_id: payData.razorpay_order_id,
+            handler: async (rpResponse) => {
+              try {
+                const vRes = await api.post('/api/payments/verify', {
+                  order_id: createdOrder.id,
+                  razorpay_order_id: rpResponse.razorpay_order_id,
+                  razorpay_payment_id: rpResponse.razorpay_payment_id,
+                  razorpay_signature: rpResponse.razorpay_signature,
+                });
+                navigate('/buyer/order-success', { state: { order: vRes.data.order } });
+              } catch (vErr) {
+                setError(vErr.response?.data?.error || 'Razorpay payment verification failed');
+              }
+            },
+            theme: { color: '#246B45' },
+            modal: {
+              ondismiss: () => {
+                setError(`Razorpay checkout closed. Order ${createdOrder.order_number} is saved as Pending.`);
+              },
+            },
+          });
+          rp.open();
+          return;
+        }
+
+        // Sandbox / Test Mode Razorpay Checkout Modal
+        setRazorpayModal({ payData, order: createdOrder, channel: 'UPI' });
+        return;
+      }
+
+      navigate('/buyer/order-success', { state: { order: createdOrder } });
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to place order');
     } finally {
       setPlacing(false);
+    }
+  };
+
+  const handleConfirmSandboxRazorpay = async () => {
+    if (!razorpayModal) return;
+    try {
+      setVerifyingRp(true);
+      const { payData, order } = razorpayModal;
+      const vRes = await api.post('/api/payments/verify', {
+        order_id: order.id,
+        razorpay_order_id: payData.razorpay_order_id,
+        razorpay_payment_id: `pay_rp_${Date.now()}`,
+        razorpay_signature: 'valid_sandbox_signature',
+      });
+      setRazorpayModal(null);
+      navigate('/buyer/order-success', { state: { order: vRes.data.order } });
+    } catch (err) {
+      setError(err.response?.data?.error || 'Razorpay verification failed');
+    } finally {
+      setVerifyingRp(false);
     }
   };
 
@@ -281,20 +349,20 @@ const CheckoutPage = () => {
 
           <label className={`
             flex items-center justify-between p-3.5 rounded-2xl border-2 cursor-pointer transition-all
-            ${paymentMethod === 'ONLINE_SANDBOX' ? 'border-kisan-primary bg-kisan-light/30' : 'border-kisan-border'}
+            ${paymentMethod === 'RAZORPAY' ? 'border-kisan-primary bg-kisan-light/30' : 'border-kisan-border'}
           `}>
             <div className="flex items-center space-x-3">
-              <CreditCard className="w-5 h-5 text-purple-700" />
+              <CreditCard className="w-5 h-5 text-blue-600" />
               <div>
-                <span className="font-bold text-xs text-kisan-dark block">Online Sandbox Payment</span>
-                <span className="text-[11px] text-kisan-muted">Simulate test card / netbanking verification</span>
+                <span className="font-bold text-xs text-kisan-dark block">Razorpay (UPI, Cards, Netbanking)</span>
+                <span className="text-[11px] text-kisan-muted">Secure instant checkout powered by Razorpay</span>
               </div>
             </div>
             <input
               type="radio"
               name="payment"
-              checked={paymentMethod === 'ONLINE_SANDBOX'}
-              onChange={() => setPaymentMethod('ONLINE_SANDBOX')}
+              checked={paymentMethod === 'RAZORPAY'}
+              onChange={() => setPaymentMethod('RAZORPAY')}
               className="text-kisan-primary focus:ring-kisan-primary"
             />
           </label>
@@ -327,8 +395,79 @@ const CheckoutPage = () => {
         disabled={placing}
         className="w-full bg-kisan-primary text-white py-4 rounded-2xl font-bold text-base shadow-card hover:bg-kisan-dark transition-all disabled:opacity-50"
       >
-        {placing ? 'Confirming Harvest Order...' : `${t('placeOrder')} • ₹${cart.total_amount.toFixed(2)}`}
+        {placing ? 'Confirming Harvest Order...' : `${paymentMethod === 'RAZORPAY' ? 'Pay with Razorpay' : t('placeOrder')} • ₹${cart.total_amount.toFixed(2)}`}
       </button>
+
+      {/* Razorpay Sandbox Checkout Modal (used when live merchant keys are not set) */}
+      {razorpayModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl border border-gray-200">
+            <div className="bg-[#1565C0] text-white p-4 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider opacity-80 font-bold">Razorpay Test Checkout</p>
+                <h3 className="text-base font-extrabold">KisanDirect</h3>
+                <p className="text-[11px] opacity-90">Order {razorpayModal.payData.order_number}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-black">₹{Number(razorpayModal.payData.amount).toFixed(2)}</p>
+                <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-semibold">Test Mode</span>
+              </div>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div className="grid grid-cols-3 gap-2 text-xs font-bold">
+                {['UPI', 'Card', 'Netbanking'].map((ch) => (
+                  <button
+                    key={ch}
+                    type="button"
+                    onClick={() => setRazorpayModal({ ...razorpayModal, channel: ch })}
+                    className={`py-2 rounded-xl border transition-all ${
+                      razorpayModal.channel === ch
+                        ? 'border-[#1565C0] bg-blue-50 text-[#1565C0]'
+                        : 'border-gray-200 text-gray-600'
+                    }`}
+                  >
+                    {ch}
+                  </button>
+                ))}
+              </div>
+
+              <div className="p-3 bg-gray-50 rounded-2xl border border-gray-200 text-xs text-gray-700 space-y-1">
+                <p className="font-bold text-kisan-dark">
+                  {razorpayModal.channel === 'UPI' && 'Pay via UPI (success@razorpay)'}
+                  {razorpayModal.channel === 'Card' && 'Test Visa Card •••• 1111'}
+                  {razorpayModal.channel === 'Netbanking' && 'Test HDFC / SBI Netbanking'}
+                </p>
+                <p className="text-[11px] text-gray-500 font-mono">
+                  RP Order: {razorpayModal.payData.razorpay_order_id}
+                </p>
+              </div>
+
+              <div className="flex space-x-2">
+                <button
+                  type="button"
+                  disabled={verifyingRp}
+                  onClick={() => {
+                    setRazorpayModal(null);
+                    setError(`Razorpay payment cancelled. Order ${razorpayModal.payData.order_number} is saved as Pending.`);
+                  }}
+                  className="flex-1 py-2.5 border border-gray-300 rounded-xl text-xs font-bold text-gray-600"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={verifyingRp}
+                  onClick={handleConfirmSandboxRazorpay}
+                  className="flex-1 py-2.5 bg-[#1565C0] hover:bg-[#0D47A1] text-white rounded-xl text-xs font-bold disabled:opacity-50"
+                >
+                  {verifyingRp ? 'Verifying...' : `Pay ₹${Number(razorpayModal.payData.amount).toFixed(2)}`}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

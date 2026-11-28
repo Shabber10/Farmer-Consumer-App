@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Trash2, Edit3, MapPin, AlertCircle, Users, Truck, Sprout } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import api from '../../services/api';
+import api, { getImageUrl } from '../../services/api';
 import { getLocalizedProductName, getLocalizedCategoryName, getLocalizedUnit } from '../../utils/productLocalization';
 
-const FALLBACK_IMG = 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&auto=format&fit=crop&q=80';
+const FALLBACK_IMG = '';
 
 const FarmerProducts = () => {
   const { language, t } = useLanguage();
@@ -59,7 +59,8 @@ const FarmerProducts = () => {
         available_quantity: parseFloat(editingProduct.available_quantity),
         delivery_price_per_km: parseFloat(editingProduct.delivery_price_per_km),
         max_delivery_km: maxKm,
-        is_available: editingProduct.is_available
+        is_available: editingProduct.is_available,
+        selling_mode: editingProduct.selling_mode || 'both'
       });
       setEditingProduct(null);
       fetchProducts();
@@ -121,7 +122,7 @@ const FarmerProducts = () => {
                     <div className="w-20 h-20 rounded-xl bg-emerald-50 border border-emerald-100 overflow-hidden flex-shrink-0 flex items-center justify-center">
                       {hasValidImg ? (
                         <img
-                          src={p.image_url}
+                          src={getImageUrl(p.image_url)}
                           alt={p.name}
                           onError={(e) => { e.currentTarget.src = FALLBACK_IMG; }}
                           className="w-full h-full object-cover"
@@ -134,12 +135,16 @@ const FarmerProducts = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-[10px] uppercase font-bold text-kisan-muted tracking-wide truncate">
-                          {getLocalizedCategoryName(p.category_name, language)}
+                          {getLocalizedCategoryName(p.category_name, language)} • {p.selling_mode === 'apartments_only' ? 'Apartments Only' : p.selling_mode === 'individual_only' ? 'Individual Only' : 'Bulk & Individual'}
                         </span>
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${
-                          p.is_available ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'
+                          !p.is_available || p.available_quantity <= 0
+                            ? 'bg-red-50 text-red-700 border border-red-200'
+                            : p.bulk_disabled
+                              ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                              : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                         }`}>
-                          {p.is_available ? 'Active' : 'Hidden'}
+                          {!p.is_available || p.available_quantity <= 0 ? 'Unavailable' : p.bulk_disabled ? 'Bulk Stopped' : 'Active'}
                         </span>
                       </div>
 
@@ -176,12 +181,12 @@ const FarmerProducts = () => {
                       </span>
                     </div>
 
-                    <div className="bg-amber-50/80 px-2.5 py-1.5 rounded-xl border border-amber-100 flex items-center justify-between">
-                      <div className="flex items-center space-x-1 text-amber-900 min-w-0">
-                        <Truck className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                    <div className="bg-emerald-50/80 px-2.5 py-1.5 rounded-xl border border-emerald-100 flex items-center justify-between">
+                      <div className="flex items-center space-x-1 text-emerald-900 min-w-0">
+                        <Truck className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
                         <span className="text-[10px] font-bold truncate">₹{p.delivery_price_per_km ?? 0}/km</span>
                       </div>
-                      <span className="text-[10px] font-bold text-amber-800 flex-shrink-0">
+                      <span className="text-[10px] font-bold text-emerald-800 flex-shrink-0">
                         &le;{p.max_delivery_km ?? 15}km
                       </span>
                     </div>
@@ -310,9 +315,9 @@ const FarmerProducts = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 bg-amber-50 p-2.5 rounded-xl border border-amber-100">
+              <div className="grid grid-cols-2 gap-2 bg-emerald-50 p-2.5 rounded-xl border border-emerald-100">
                 <div>
-                  <label className="block font-bold text-amber-900 mb-1 text-[11px]">Delivery Price / km (₹) *</label>
+                  <label className="block font-bold text-emerald-900 mb-1 text-[11px]">Delivery Price / km (₹) *</label>
                   <input
                     type="number"
                     step="0.5"
@@ -320,12 +325,12 @@ const FarmerProducts = () => {
                     value={editingProduct.delivery_price_per_km ?? ''}
                     onChange={(e) => setEditingProduct({ ...editingProduct, delivery_price_per_km: e.target.value })}
                     placeholder="e.g. 5"
-                    className="w-full px-2.5 py-1.5 border border-amber-200 rounded-lg text-xs"
+                    className="w-full px-2.5 py-1.5 border border-emerald-200 rounded-lg text-xs"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-amber-900 mb-1 text-[11px]">Max Distance (&lt; 20 km) *</label>
+                  <label className="block font-bold text-emerald-900 mb-1 text-[11px]">Max Distance (&lt; 20 km) *</label>
                   <input
                     type="number"
                     step="1"
@@ -339,10 +344,23 @@ const FarmerProducts = () => {
                       }
                     }}
                     placeholder="e.g. 15"
-                    className="w-full px-2.5 py-1.5 border border-amber-200 rounded-lg text-xs"
+                    className="w-full px-2.5 py-1.5 border border-emerald-200 rounded-lg text-xs"
                     required
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block font-bold mb-1">Who can buy this produce? *</label>
+                <select
+                  value={editingProduct.selling_mode || 'both'}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, selling_mode: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-xl bg-white font-semibold"
+                >
+                  <option value="both">Both Apartments (Bulk) &amp; Individual Buyers</option>
+                  <option value="apartments_only">Apartments (Bulk) Only</option>
+                  <option value="individual_only">Individual Buyers Only</option>
+                </select>
               </div>
 
               <div className="flex items-center space-x-2 pt-1">

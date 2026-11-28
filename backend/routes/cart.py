@@ -45,8 +45,10 @@ def add_to_cart():
         return jsonify({'error': 'Valid product_id and quantity > 0 required'}), 400
 
     product = db.session.get(Product, product_id)
-    if not product or not product.is_available:
+    if not product or not product.is_available or product.available_quantity <= 0:
         return jsonify({'error': 'Product is currently not available'}), 404
+    if product.selling_mode == 'apartments_only':
+        return jsonify({'error': 'This product is available for Apartment Bulk Orders only'}), 400
 
     existing_item = CartItem.query.filter_by(buyer_id=user_id, product_id=product_id).first()
     new_quantity = (existing_item.quantity + quantity) if existing_item else quantity

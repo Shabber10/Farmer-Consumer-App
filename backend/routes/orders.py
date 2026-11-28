@@ -37,8 +37,10 @@ def place_order():
 
         for c_item in cart_items:
             product = db.session.get(Product, c_item.product_id, with_for_update=True)
-            if not product or not product.is_available:
+            if not product or not product.is_available or product.available_quantity <= 0:
                 return jsonify({'error': f"Product '{c_item.product.name if c_item.product else 'Item'}' is unavailable"}), 400
+            if product.selling_mode == 'apartments_only':
+                return jsonify({'error': f"Product '{product.name}' is available for Apartment Bulk Orders only."}), 400
             if product.available_quantity < c_item.quantity:
                 return jsonify({
                     'error': f"Insufficient stock for '{product.name}'. Available: {float(product.available_quantity)} {product.unit}"
@@ -103,11 +105,9 @@ def place_order():
                 )
                 db.session.add(order_item)
 
-                # Deduct inventory
+                # Deduct inventory and auto-sync bulk/availability cutoffs
                 prod.available_quantity -= it['quantity']
-                if prod.available_quantity <= 0:
-                    prod.available_quantity = Decimal('0.00')
-                    prod.is_available = False
+                prod.sync_stock_flags()
 
             # Notify Farmer
             farmer_profile = items[0]['product'].farmer

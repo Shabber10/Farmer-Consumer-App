@@ -6,7 +6,7 @@ import {
   List, Map as MapIcon, ShieldCheck, Phone, Sparkles, CheckCircle2, X
 } from 'lucide-react';
 import api from '../../services/api';
-import { BackButton, PageBackground } from '../../shared';
+import { PageBackground } from '../../shared';
 import bg7 from '../../assets/images/bg7_hd.jpg';
 
 const FarmerCommunities = () => {
@@ -28,7 +28,7 @@ const FarmerCommunities = () => {
     product_id: '',
     total_stock_kg: 100,
     min_bulk_kg: 50,
-    duration_minutes: 180,
+    duration_minutes: 60,
     base_price: 100,
     tier_30_price: 90,
     tier_80_price: 80,
@@ -66,17 +66,19 @@ const FarmerCommunities = () => {
       setCampaigns(campRes.data.campaigns || []);
       const prods = prodRes.data.products || [];
       setProducts(prods);
-      if (prods.length > 0 && !campaignForm.product_id) {
-        const p = prods[0];
+      const firstEligible = prods.find(
+        (p) => p.is_available && p.available_quantity > 0 && p.selling_mode !== 'individual_only' && !p.bulk_disabled
+      );
+      if (firstEligible && !campaignForm.product_id) {
         setCampaignForm((prev) => ({
           ...prev,
-          product_id: p.id,
-          total_stock_kg: p.available_quantity || 100,
-          min_bulk_kg: p.min_bulk_quantity || 50,
-          base_price: p.price || 100,
-          tier_30_price: Math.round((p.price || 100) * 0.9),
-          tier_80_price: Math.round((p.price || 100) * 0.8),
-          tier_100_price: p.bulk_price || Math.round((p.price || 100) * 0.7),
+          product_id: firstEligible.id,
+          total_stock_kg: firstEligible.available_quantity || 100,
+          min_bulk_kg: firstEligible.min_bulk_quantity || 50,
+          base_price: firstEligible.price || 100,
+          tier_30_price: Math.round((firstEligible.price || 100) * 0.9),
+          tier_80_price: Math.round((firstEligible.price || 100) * 0.8),
+          tier_100_price: firstEligible.bulk_price || Math.round((firstEligible.price || 100) * 0.7),
         }));
       }
     } catch (err) {
@@ -127,7 +129,7 @@ const FarmerCommunities = () => {
         `<b>${c.name}</b><br/>${c.distance_km} km away • ${c.members_count} members<br/>Farmer Rating: ${c.avg_farmer_rating || 'New'} ★`
       );
       marker.on('click', () => {
-        setSelectedIds((prev) => (prev.includes(c.id) ? prev.filter((id) => id !== c.id) : [...prev, c.id]));
+        setSelectedIds((prev) => (prev.includes(c.id) ? [] : [c.id]));
       });
     });
 
@@ -141,7 +143,7 @@ const FarmerCommunities = () => {
   }, [tab, viewMode, communities, selectedIds, farmerLoc]);
 
   const toggleSelect = (id) => {
-    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    setSelectedIds((prev) => (prev.includes(id) ? [] : [id]));
   };
 
   const handleProductChange = (prodId) => {
@@ -223,6 +225,11 @@ const FarmerCommunities = () => {
     }
   };
 
+  const eligibleBulkProducts = products.filter(
+    (p) => p.is_available && p.available_quantity > 0 && p.selling_mode !== 'individual_only' && !p.bulk_disabled
+  );
+  const apartmentsDisabled = eligibleBulkProducts.length === 0;
+
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -234,7 +241,6 @@ const FarmerCommunities = () => {
   return (
     <div className="relative max-w-5xl mx-auto px-4 py-5 space-y-5 pb-24 md:pb-8">
       <PageBackground image={bg7} />
-      <BackButton fallbackPath="/farmer" label="Dashboard" />
 
       {toast && (
         <div className="fixed top-16 right-4 z-50 bg-emerald-950 text-white text-xs font-bold px-4 py-2.5 rounded-2xl shadow-lg flex items-center space-x-2">
@@ -293,6 +299,11 @@ const FarmerCommunities = () => {
       {/* TAB 1: DISCOVER APARTMENTS */}
       {tab === 'discover' && (
         <div className="space-y-4">
+          {apartmentsDisabled && (
+            <div className="bg-amber-50 border border-amber-300 text-amber-900 rounded-2xl p-3.5 text-xs font-semibold">
+              Apartments selection is disabled because none of your active products have enough stock above their Min Bulk Target or are set to Bulk/Both selling mode.
+            </div>
+          )}
           <div className="flex items-center justify-between gap-2">
             <div className="flex bg-gray-100 p-1 rounded-xl text-xs font-bold">
               <button
@@ -338,9 +349,13 @@ const FarmerCommunities = () => {
                 return (
                   <div
                     key={c.id}
-                    onClick={() => toggleSelect(c.id)}
-                    className={`cursor-pointer bg-white rounded-2xl p-4 border-2 transition-all shadow-card space-y-2 ${
-                      isSelected ? 'border-kisan-primary bg-emerald-50/40' : 'border-kisan-border'
+                    onClick={() => { if (!apartmentsDisabled) toggleSelect(c.id); }}
+                    className={`bg-white rounded-2xl p-4 border-2 transition-all shadow-card space-y-2 ${
+                      apartmentsDisabled
+                        ? 'opacity-60 cursor-not-allowed border-kisan-border'
+                        : isSelected
+                          ? 'cursor-pointer border-kisan-primary bg-emerald-50/40'
+                          : 'cursor-pointer border-kisan-border'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -406,10 +421,11 @@ const FarmerCommunities = () => {
                 </div>
                 <button
                   type="button"
+                  disabled={apartmentsDisabled}
                   onClick={() => handleFulfillDemand(req)}
-                  className="px-4 py-2 bg-kisan-primary hover:bg-kisan-dark text-white text-xs font-bold rounded-xl self-start sm:self-auto"
+                  className="px-4 py-2 bg-kisan-primary hover:bg-kisan-dark text-white text-xs font-bold rounded-xl self-start sm:self-auto disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Fulfill with Reserved Stock
+                  {apartmentsDisabled ? 'No Eligible Bulk Stock' : 'Fulfill with Reserved Stock'}
                 </button>
               </div>
             ))
@@ -542,10 +558,30 @@ const FarmerCommunities = () => {
                 onChange={(e) => handleProductChange(e.target.value)}
                 className="w-full px-3 py-2 text-xs border rounded-xl bg-white"
               >
-                {products.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name} (Avail: {p.available_quantity} {p.unit} • ₹{p.price})</option>
-                ))}
+                {products.map((p) => {
+                  const isOut = !p.is_available || p.available_quantity <= 0;
+                  const isIndiv = p.selling_mode === 'individual_only';
+                  const isBelowMin = p.bulk_disabled || p.available_quantity < (p.min_bulk_quantity || 50);
+                  const disabled = isOut || isIndiv || isBelowMin;
+                  const reason = isOut
+                    ? 'Out of Stock — Unavailable'
+                    : isIndiv
+                      ? 'Individual Only — Apartments Disabled'
+                      : isBelowMin
+                        ? 'Below Min Bulk — Apartments Disabled'
+                        : `Avail: ${p.available_quantity} ${p.unit} • Min Bulk: ${p.min_bulk_quantity} • ₹${p.price}`;
+                  return (
+                    <option key={p.id} value={p.id} disabled={disabled}>
+                      {p.name} ({reason})
+                    </option>
+                  );
+                })}
               </select>
+              {eligibleBulkProducts.length === 0 && (
+                <p className="text-[11px] text-amber-700 font-semibold mt-1">
+                  No eligible products (remaining stock is below Min Bulk Target, out of stock, or set to Individual Only).
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-3 gap-2">
@@ -570,15 +606,16 @@ const FarmerCommunities = () => {
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-bold mb-1">Timer (mins)</label>
-                <input
-                  type="number"
-                  required
-                  min="15"
+                <label className="block text-[11px] font-bold mb-1">Timer (1–2 hrs)</label>
+                <select
                   value={campaignForm.duration_minutes}
                   onChange={(e) => setCampaignForm({ ...campaignForm, duration_minutes: Number(e.target.value) })}
-                  className="w-full px-2.5 py-2 text-xs border rounded-xl"
-                />
+                  className="w-full px-2 py-2 text-xs border rounded-xl bg-white"
+                >
+                  <option value={60}>1 Hour (60m)</option>
+                  <option value={90}>1.5 Hours (90m)</option>
+                  <option value={120}>2 Hours (120m)</option>
+                </select>
               </div>
             </div>
 

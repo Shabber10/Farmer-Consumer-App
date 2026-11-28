@@ -197,8 +197,21 @@ class Product(db.Model):
     harvest_date = db.Column(db.Date, nullable=True)
     is_organic = db.Column(db.Boolean, default=False)
     is_available = db.Column(db.Boolean, default=True)
+    selling_mode = db.Column(db.String(30), nullable=False, default='both')  # 'both' | 'apartments_only' | 'individual_only'
+    bulk_disabled = db.Column(db.Boolean, nullable=False, default=False)
+    dispatch_started_at = db.Column(db.DateTime, default=datetime.utcnow)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def sync_stock_flags(self):
+        """Auto-stop bulk when remaining < min_bulk_quantity; block product when stock == 0."""
+        if self.available_quantity is None or self.available_quantity <= 0:
+            self.available_quantity = Decimal('0.00')
+            self.is_available = False
+            self.bulk_disabled = True
+        else:
+            min_b = self.min_bulk_quantity or Decimal('50.00')
+            self.bulk_disabled = bool(self.available_quantity < min_b)
 
     def to_dict(self):
         farmer_data = self.farmer.to_dict() if self.farmer else {}
@@ -230,6 +243,9 @@ class Product(db.Model):
             'harvest_date': self.harvest_date.isoformat() if self.harvest_date else None,
             'is_organic': self.is_organic,
             'is_available': self.is_available and (self.available_quantity > 0),
+            'selling_mode': self.selling_mode or 'both',
+            'bulk_disabled': bool(self.bulk_disabled or (self.available_quantity < (self.min_bulk_quantity or Decimal('50.00')))),
+            'dispatch_started_at': self.dispatch_started_at.isoformat() if self.dispatch_started_at else None,
             'average_rating': average_rating,
             'review_count': review_count,
             'created_at': self.created_at.isoformat() if self.created_at else None

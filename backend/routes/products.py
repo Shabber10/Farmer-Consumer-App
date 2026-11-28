@@ -3,9 +3,10 @@ from decimal import Decimal
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from flask import Blueprint, request, jsonify, current_app
-from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt, verify_jwt_in_request
 from backend.extensions import db
-from backend.models import Product, FarmerProfile, Category
+from backend.models import Product, FarmerProfile, Category, User, Address
+from backend.utils_geo import is_visible_in_expanding_hex_ring
 
 products_bp = Blueprint('products', __name__)
 
@@ -24,7 +25,11 @@ def get_products():
     only_organic = request.args.get('is_organic', type=lambda v: v.lower() == 'true')
     farmer_id = request.args.get('farmer_id', type=int)
 
-    query = Product.query.filter(Product.is_available == True, Product.available_quantity > 0)
+    query = Product.query.filter(
+        Product.is_available == True,
+        Product.available_quantity > 0,
+        Product.selling_mode != 'apartments_only'
+    )
 
     if category_id:
         query = query.filter(Product.category_id == category_id)
@@ -54,6 +59,34 @@ def get_products():
         query = query.order_by(Product.created_at.desc())
 
     products = query.all()
+
+    # Backend-only expanding hexagon ring geo-dispatch for individual consumers
+    buyer_lat, buyer_lng = None, None
+    try:
+        verify_jwt_in_request(optional=True)
+        uid = get_jwt_identity()
+        if uid:
+            addr = Address.query.filter_by(user_id=int(uid), is_default=True).first() or Address.query.filter_by(user_id=int(uid)).first()
+            if addr and addr.latitude is not None and addr.longitude is not None:
+                buyer_lat, buyer_lng = float(addr.latitude), float(addr.longitude)
+    except Exception:
+        pass
+
+    if buyer_lat is not None and buyer_lng is not None and not farmer_id:
+        now = datetime.utcnow()
+        products = [
+            p for p in products
+            if is_visible_in_expanding_hex_ring(
+                p.farmer.latitude if p.farmer else None,
+                p.farmer.longitude if p.farmer else None,
+                buyer_lat,
+                buyer_lng,
+                p.dispatch_started_at or p.created_at,
+                float(p.max_delivery_km or 20.0),
+                now=now,
+            )
+        ]
+
     return jsonify({'products': [p.to_dict() for p in products]}), 200
 
 @products_bp.route('/<int:product_id>', methods=['GET'])
@@ -72,11 +105,15 @@ def upload_image():
     if file.filename == '':
         return jsonify({'error': 'No selected image file'}), 400
     if file and allowed_file(file.filename):
-        os.makedirs(current_app.config['UPLOAD_FOLDER'], exist_ok=True)
+        user_id = int(get_jwt_identity())
+        user = User.query.get(user_id)
+        farmer_folder = f"farmer_{user.farmer_profile.id}" if user and user.farmer_profile else "farmer_general"
+        target_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], farmer_folder)
+        os.makedirs(target_dir, exist_ok=True)
         filename = secure_filename(f"{int(datetime.utcnow().timestamp())}_{file.filename}")
-        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+        file_path = os.path.join(target_dir, filename)
         file.save(file_path)
-        image_url = f"/uploads/{filename}"
+        image_url = f"/uploads/{farmer_folder}/{filename}"
         return jsonify({'image_url': image_url, 'message': 'Image uploaded successfully'}), 201
     return jsonify({'error': 'File type not allowed'}), 400
 
@@ -109,6 +146,9 @@ def create_product():
     delivery_areas = data.get('delivery_areas', '').strip()
     delivery_price_per_km = data.get('delivery_price_per_km')
     max_delivery_km = data.get('max_delivery_km')
+    selling_mode = (data.get('selling_mode') or 'both').strip()
+    if selling_mode not in ('both', 'apartments_only', 'individual_only'):
+        selling_mode = 'both'
 
     if (
         not name or
@@ -134,7 +174,7 @@ def create_product():
             category_id=category_id,
             name=name,
             description=description,
-            image_url=image_url or '/placeholder-produce.jpg',
+            image_url=image_url or None,
             price=Decimal(str(price)),
             bulk_price=Decimal(str(bulk_price)) if bulk_price is not None else Decimal(str(round(float(price) * 0.75, 2))),
             min_bulk_quantity=Decimal(str(min_bulk_quantity)) if min_bulk_quantity is not None else Decimal('50.00'),
@@ -146,8 +186,11 @@ def create_product():
             location=location,
             harvest_date=harvest_date,
             is_organic=is_organic,
-            is_available=True
+            is_available=True,
+            selling_mode=selling_mode,
+            dispatch_started_at=datetime.utcnow()
         )
+        product.sync_stock_flags()
         db.session.add(product)
         db.session.commit()
         return jsonify({'message': 'Product added successfully', 'product': product.to_dict()}), 201
@@ -204,12 +247,15 @@ def update_product(product_id):
         product.is_organic = bool(data['is_organic'])
     if 'is_available' in data:
         product.is_available = bool(data['is_available'])
+    if 'selling_mode' in data and data['selling_mode'] in ('both', 'apartments_only', 'individual_only'):
+        product.selling_mode = data['selling_mode']
     if 'harvest_date' in data and data['harvest_date']:
         try:
             product.harvest_date = datetime.strptime(data['harvest_date'], '%Y-%m-%d').date()
         except Exception:
             pass
 
+    product.sync_stock_flags()
     db.session.commit()
     return jsonify({'message': 'Product updated successfully', 'product': product.to_dict()}), 200
 

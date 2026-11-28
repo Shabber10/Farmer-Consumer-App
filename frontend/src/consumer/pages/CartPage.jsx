@@ -6,7 +6,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { BackButton, PageBackground } from '../../shared';
 import bg8 from '../../assets/images/bg8_hd.jpg';
 import { getLocalizedProductName, getLocalizedUnit } from '../../utils/productLocalization';
-import api from '../../services/api';
+import api, { getImageUrl } from '../../services/api';
 import CommunityJoinCreateModal from '../components/CommunityJoinCreateModal';
 
 const CartPage = () => {
@@ -119,11 +119,17 @@ const CartPage = () => {
         <div className="lg:col-span-2 space-y-3">
           {items.map((item) => (
             <div key={item.id} className="bg-white rounded-2xl p-4 border border-kisan-border shadow-card flex items-center space-x-4">
-              <img
-                src={item.product?.image_url || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=500&auto=format&fit=crop&q=80'}
-                alt={item.product?.name}
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover bg-gray-100 flex-shrink-0"
-              />
+              {item.product?.image_url && item.product.image_url !== '/placeholder-produce.jpg' ? (
+                <img
+                  src={getImageUrl(item.product.image_url)}
+                  alt={item.product?.name}
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover bg-gray-100 flex-shrink-0"
+                />
+              ) : (
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                  <ShoppingBag className="w-6 h-6" />
+                </div>
+              )}
 
               <div className="flex-1 min-w-0">
                 <h3 className="font-bold text-sm text-kisan-dark truncate">

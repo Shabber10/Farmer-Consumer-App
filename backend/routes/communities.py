@@ -195,7 +195,14 @@ def get_my_community():
         return jsonify({'community': None, 'membership': None, 'orders': [], 'members': []}), 200
 
     community = membership.community
-    orders = CommunityOrder.query.filter_by(community_id=community.id).order_by(CommunityOrder.created_at.desc()).all()
+    now = datetime.utcnow()
+    raw_orders = CommunityOrder.query.filter_by(community_id=community.id).order_by(CommunityOrder.created_at.desc()).all()
+    orders = []
+    for o in raw_orders:
+        exp = (o.campaign.expires_at if o.campaign else None) or o.expires_at
+        if exp and exp <= now and o.items.count() == 0 and float(o.current_qty_kg or 0) <= 0:
+            continue
+        orders.append(o)
     members = CommunityMember.query.filter_by(community_id=community.id, status='active').all()
 
     return jsonify({
@@ -245,12 +252,15 @@ def push_cart_to_community(community_id):
         if existing_co:
             if existing_co.campaign_id:
                 camp = db.session.query(BulkCampaign).with_for_update().get(existing_co.campaign_id)
-                if camp and (camp.allocated_kg + qty) > camp.total_stock_kg:
+                prod_locked = db.session.query(Product).with_for_update().get(product.id)
+                if camp and ((camp.allocated_kg + qty) > camp.total_stock_kg or prod_locked.available_quantity < qty):
                     return jsonify({
-                        'error': f'Only {float(camp.total_stock_kg - camp.allocated_kg)} kg left in {product.name} campaign pool.'
+                        'error': f'Only {float(min(camp.total_stock_kg - camp.allocated_kg, prod_locked.available_quantity))} kg left in {product.name}.'
                     }), 400
                 if camp:
                     camp.allocated_kg = camp.allocated_kg + qty
+                    prod_locked.available_quantity = prod_locked.available_quantity - qty
+                    prod_locked.sync_stock_flags()
             existing_co.current_qty_kg = (existing_co.current_qty_kg or Decimal('0.00')) + qty
             target_co = existing_co
         else:
@@ -306,14 +316,23 @@ def contribute_to_community_order(order_id):
     if co.status not in ('open_demand', 'campaign_active'):
         return jsonify({'error': 'This group order is already locked or completed.'}), 400
 
+    exp = (co.campaign.expires_at if co.campaign else None) or co.expires_at
+    if exp and exp <= datetime.utcnow():
+        return jsonify({'error': 'Timer has ended for this community deal. You can no longer add to it.'}), 400
+
     if co.campaign_id:
         camp = db.session.query(BulkCampaign).with_for_update().get(co.campaign_id)
+        prod_locked = db.session.query(Product).with_for_update().get(co.product_id)
         if not camp or camp.status != 'active':
             return jsonify({'error': 'This campaign is no longer active.'}), 400
-        if (camp.allocated_kg + qty) > camp.total_stock_kg:
-            avail = float(camp.total_stock_kg - camp.allocated_kg)
-            return jsonify({'error': f'Only {avail} kg remaining in farmer shared stock pool.'}), 400
+        if not prod_locked or not prod_locked.is_available or prod_locked.available_quantity <= 0:
+            return jsonify({'error': 'This product is currently unavailable / out of stock.'}), 400
+        if (camp.allocated_kg + qty) > camp.total_stock_kg or prod_locked.available_quantity < qty:
+            avail = float(min(camp.total_stock_kg - camp.allocated_kg, prod_locked.available_quantity))
+            return jsonify({'error': f'Only {avail} kg remaining in stock pool.'}), 400
         camp.allocated_kg = camp.allocated_kg + qty
+        prod_locked.available_quantity = prod_locked.available_quantity - qty
+        prod_locked.sync_stock_flags()
 
     co.current_qty_kg = (co.current_qty_kg or Decimal('0.00')) + qty
     _, _, landmark, phone = _get_user_coords_and_contact(user_id)

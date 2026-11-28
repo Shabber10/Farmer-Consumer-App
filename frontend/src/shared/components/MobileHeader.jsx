@@ -1,17 +1,53 @@
-import React from 'react';
-import { useLocation } from 'react-router-dom';
-import { ArrowLeft, Globe } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Globe, Bell, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useNavigation } from '../../contexts/NavigationContext';
+import api from '../../services/api';
 import brandLogo from '../../assets/images/kisan_direct_brand_logo.png';
 import appLogo from '../../assets/images/app_logo.png';
 
 const MobileHeader = ({ title, showBack = false }) => {
   const location = useLocation();
-  const { role } = useAuth();
+  const navigate = useNavigate();
+  const { role, isAuthenticated } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const { goBack, isRootRoute } = useNavigation();
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifs, setShowNotifs] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated || role !== 'buyer') return;
+    let active = true;
+    const fetchNotifs = async () => {
+      try {
+        const res = await api.get('/api/notifications');
+        if (!active) return;
+        setNotifications(res.data.notifications || []);
+        setUnreadCount(res.data.unread_count || 0);
+      } catch {
+        // ignore polling error
+      }
+    };
+    fetchNotifs();
+    const timer = setInterval(fetchNotifs, 20000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [isAuthenticated, role, location.pathname]);
+
+  const handleMarkAllRead = async () => {
+    try {
+      await api.post('/api/notifications/read-all');
+      setUnreadCount(0);
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    } catch {
+      // ignore
+    }
+  };
 
   const isRoot = isRootRoute(location.pathname);
   const canGoBack = showBack || !isRoot;
@@ -71,7 +107,22 @@ const MobileHeader = ({ title, showBack = false }) => {
           )}
         </div>
 
-        <div className="w-12 flex items-center justify-end flex-shrink-0">
+        <div className="flex items-center justify-end space-x-1.5 flex-shrink-0">
+          {isAuthenticated && role === 'buyer' && (
+            <button
+              type="button"
+              onClick={() => setShowNotifs((v) => !v)}
+              className="relative p-1.5 rounded-full bg-kisan-light text-kisan-primary border border-kisan-secondary/30 tap-effect"
+              aria-label="Notifications"
+            >
+              <Bell className="w-3.5 h-3.5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-600 text-white text-[9px] font-black flex items-center justify-center">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+          )}
           {/* Quick Language Toggle Pill */}
           <button
             onClick={cycleLang}
@@ -83,6 +134,48 @@ const MobileHeader = ({ title, showBack = false }) => {
           </button>
         </div>
       </div>
+
+      {showNotifs && isAuthenticated && role === 'buyer' && (
+        <div className="max-w-md ml-auto mt-2 bg-white rounded-2xl border border-kisan-border shadow-xl p-3 space-y-2 text-left">
+          <div className="flex items-center justify-between pb-1.5 border-b border-gray-100">
+            <span className="text-xs font-extrabold text-kisan-dark">Apartment &amp; Order Alerts</span>
+            <div className="flex items-center space-x-2">
+              {unreadCount > 0 && (
+                <button type="button" onClick={handleMarkAllRead} className="text-[10px] font-bold text-kisan-primary">
+                  Mark all read
+                </button>
+              )}
+              <button type="button" onClick={() => setShowNotifs(false)} className="text-gray-400">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+          {notifications.length === 0 ? (
+            <p className="text-[11px] text-kisan-muted py-2 text-center">No notifications yet</p>
+          ) : (
+            <div className="max-h-60 overflow-y-auto divide-y divide-gray-100">
+              {notifications.slice(0, 8).map((n) => (
+                <button
+                  key={n.id}
+                  type="button"
+                  onClick={() => {
+                    setShowNotifs(false);
+                    if (!n.is_read) {
+                      api.patch(`/api/notifications/${n.id}/read`).catch(() => {});
+                      setUnreadCount((c) => Math.max(0, c - 1));
+                    }
+                    navigate('/buyer/community');
+                  }}
+                  className={`w-full text-left py-2 px-1.5 rounded-lg ${n.is_read ? 'opacity-70' : 'bg-emerald-50/60'}`}
+                >
+                  <p className="text-[11px] font-extrabold text-kisan-dark">{n.title}</p>
+                  <p className="text-[10px] text-kisan-muted mt-0.5">{n.message}</p>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </header>
   );
 };

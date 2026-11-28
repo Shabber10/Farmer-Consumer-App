@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
 
-const getBaseUrl = () => {
+export const getBaseUrl = () => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
@@ -13,6 +13,16 @@ const getBaseUrl = () => {
     return 'http://10.0.2.2:5050';
   }
   return '';
+};
+
+export const getImageUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:') || url.startsWith('blob:')) {
+    return url;
+  }
+  const base = getBaseUrl();
+  const normalized = url.startsWith('/') ? url : `/${url}`;
+  return base ? `${base}${normalized}` : normalized;
 };
 
 const api = axios.create({

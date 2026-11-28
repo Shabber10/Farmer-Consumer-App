@@ -340,7 +340,7 @@ def create_product():
             category_id=int(category_id),
             name=name,
             description=data.get('description', ''),
-            image_url=data.get('image_url') or 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=500',
+            image_url=data.get('image_url') or None,
             price=Decimal(str(price)),
             unit=unit,
             available_quantity=Decimal(str(available_quantity)),
@@ -539,7 +539,7 @@ def create_category():
     category = Category(
         name=name,
         description=data.get('description', ''),
-        image=data.get('image') or 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=500',
+        image=data.get('image') or None,
         is_active=True
     )
     db.session.add(category)

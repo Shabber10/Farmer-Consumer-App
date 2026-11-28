@@ -8,7 +8,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { PageBackground } from '../../shared';
 import bg9 from '../../assets/images/bg9_hd.jpg';
-import api from '../../services/api';
+import api, { getImageUrl } from '../../services/api';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -834,11 +834,18 @@ const AdminDashboard = () => {
                   {filteredProducts.map(p => (
                     <tr key={p.id} className="hover:bg-gray-50/50">
                       <td className="py-3 font-bold text-kisan-dark flex items-center space-x-3">
-                        <img
-                          src={p.image_url || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=200'}
-                          alt={p.name}
-                          className="w-10 h-10 rounded-xl object-cover border border-kisan-border"
-                        />
+                        {p.image_url && p.image_url !== '/placeholder-produce.jpg' ? (
+                          <img
+                            src={getImageUrl(p.image_url)}
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            alt={p.name}
+                            className="w-10 h-10 rounded-xl object-cover border border-kisan-border"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-xl bg-kisan-bg border border-kisan-border flex items-center justify-center text-kisan-primary/40">
+                            <Package className="w-5 h-5" />
+                          </div>
+                        )}
                         <div>
                           <p>{p.name}</p>
                           {p.is_organic && <span className="text-[9px] text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.2 rounded">Organic</span>}
@@ -995,11 +1002,18 @@ const AdminDashboard = () => {
             {categoriesList.map(cat => (
               <div key={cat.id} className="p-4 rounded-2xl border border-kisan-border bg-gray-50/50 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <img
-                    src={cat.image || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=200'}
-                    alt={cat.name}
-                    className="w-12 h-12 rounded-xl object-cover border border-kisan-border shadow-sm"
-                  />
+                  {cat.image ? (
+                    <img
+                      src={getImageUrl(cat.image)}
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      alt={cat.name}
+                      className="w-12 h-12 rounded-xl object-cover border border-kisan-border shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-xl bg-kisan-bg border border-kisan-border shadow-sm flex items-center justify-center text-kisan-primary/40">
+                      <Layers className="w-6 h-6" />
+                    </div>
+                  )}
                   <div>
                     <h3 className="font-bold text-sm text-kisan-dark">{cat.name}</h3>
                     <p className="text-[11px] text-kisan-muted line-clamp-1">{cat.description || 'Agricultural products'}</p>

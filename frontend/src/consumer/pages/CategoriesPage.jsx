@@ -4,7 +4,7 @@ import { ArrowRight, Layers } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { BackButton, PageBackground } from '../../shared';
 import bg6 from '../../assets/images/bg6_hd.jpg';
-import api from '../../services/api';
+import api, { getImageUrl } from '../../services/api';
 import { getLocalizedCategoryName } from '../../utils/productLocalization';
 
 const CategoriesPage = () => {
@@ -42,12 +42,17 @@ const CategoriesPage = () => {
               onClick={() => navigate(`/buyer?category_id=${c.id}`)}
               className="group cursor-pointer bg-white rounded-3xl border border-kisan-border shadow-card overflow-hidden hover:shadow-float transition-all duration-300 flex flex-col justify-between"
             >
-              <div className="h-44 overflow-hidden bg-gray-100 relative">
-                <img
-                  src={c.image || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=500&auto=format&fit=crop&q=80'}
-                  alt={c.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
+              <div className="h-44 overflow-hidden bg-kisan-bg relative flex items-center justify-center">
+                {c.image ? (
+                  <img
+                    src={getImageUrl(c.image)}
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    alt={c.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                ) : (
+                  <Layers className="w-12 h-12 text-kisan-primary/30" />
+                )}
                 <span className="absolute bottom-2.5 right-2.5 bg-black/60 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg">
                   {c.product_count} items
                 </span>

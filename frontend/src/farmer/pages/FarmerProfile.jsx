@@ -157,15 +157,8 @@ const FarmerProfile = () => {
 
   return (
     <div className="w-full max-w-lg mx-auto px-3.5 py-3 space-y-2.5 pb-28">
-      {/* Top Header Bar */}
-      <div className="flex items-center justify-between">
-        <button
-          onClick={() => navigate('/farmer')}
-          className="inline-flex items-center space-x-1.5 text-xs font-bold text-gray-700 hover:text-emerald-700 active:scale-95 transition-all py-1.5 px-3 rounded-xl bg-white border border-gray-200 shadow-2xs"
-        >
-          <ArrowLeft className="w-3.5 h-3.5 text-emerald-700" />
-          <span>{t('home')}</span>
-        </button>
+      {/* Top Status Badge (single back button is in MobileHeader) */}
+      <div className="flex items-center justify-end">
         <span className="inline-flex items-center text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200/80">
           <Sprout className="w-3 h-3 text-emerald-600 mr-1" />
           Verified Producer

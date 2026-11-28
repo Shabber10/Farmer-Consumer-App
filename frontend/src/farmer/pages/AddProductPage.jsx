@@ -20,6 +20,7 @@ const AddProductPage = () => {
     available_quantity: '',
     delivery_price_per_km: '',
     max_delivery_km: '15',
+    selling_mode: 'both',
     image_url: ''
   });
 
@@ -114,6 +115,7 @@ const AddProductPage = () => {
         unit: formData.unit,
         delivery_price_per_km: deliveryPerKm,
         max_delivery_km: maxKm,
+        selling_mode: formData.selling_mode,
         image_url: formData.image_url
       });
       navigate('/farmer/products');
@@ -298,20 +300,20 @@ const AddProductPage = () => {
         </div>
 
         {/* Delivery Pricing & Radius (< 20 km) */}
-        <div className="bg-amber-50/70 border border-amber-200/90 rounded-2xl p-4 space-y-3">
+        <div className="bg-emerald-50/70 border border-emerald-200/90 rounded-2xl p-4 space-y-3">
           <div className="flex items-center space-x-2">
-            <div className="w-7 h-7 rounded-lg bg-amber-600 text-white flex items-center justify-center flex-shrink-0">
+            <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center flex-shrink-0">
               <Truck className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-extrabold text-xs text-amber-950">Farmer Delivery Charges</h3>
-              <p className="text-[10px] text-amber-800">Set your delivery rate per km (strictly under 20 km)</p>
+              <h3 className="font-extrabold text-xs text-emerald-950">Farmer Delivery Charges</h3>
+              <p className="text-[10px] text-emerald-800">Set your delivery rate per km (strictly under 20 km)</p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-bold text-amber-950 text-[11px] mb-1">
+              <label className="block font-bold text-emerald-950 text-[11px] mb-1">
                 Delivery Price / km (₹) *
               </label>
               <input
@@ -321,14 +323,14 @@ const AddProductPage = () => {
                 value={formData.delivery_price_per_km}
                 onChange={(e) => setFormData({ ...formData, delivery_price_per_km: e.target.value })}
                 placeholder="e.g. 5"
-                className="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl focus:outline-none focus:border-amber-600 text-xs font-bold text-amber-950"
+                className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-xl focus:outline-none focus:border-emerald-600 text-xs font-bold text-emerald-950"
                 required
               />
-              <span className="text-[9px] text-amber-700 block mt-0.5">Charged per km for delivery</span>
+              <span className="text-[9px] text-emerald-700 block mt-0.5">Charged per km for delivery</span>
             </div>
 
             <div>
-              <label className="block font-bold text-amber-950 text-[11px] mb-1">
+              <label className="block font-bold text-emerald-950 text-[11px] mb-1">
                 Max Distance (&lt; 20 km) *
               </label>
               <input
@@ -344,12 +346,31 @@ const AddProductPage = () => {
                   }
                 }}
                 placeholder="e.g. 15"
-                className="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl focus:outline-none focus:border-amber-600 text-xs font-bold text-amber-950"
+                className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-xl focus:outline-none focus:border-emerald-600 text-xs font-bold text-emerald-950"
                 required
               />
-              <span className="text-[9px] text-amber-700 block mt-0.5">Allowed range: 1 – 19 km</span>
+              <span className="text-[9px] text-emerald-700 block mt-0.5">Allowed range: 1 – 19 km</span>
             </div>
           </div>
+        </div>
+
+        {/* Selling Mode Selector */}
+        <div className="bg-emerald-50/70 border border-emerald-200/90 rounded-2xl p-4 space-y-2">
+          <label className="block font-extrabold text-xs text-emerald-950">
+            Who can buy this produce? *
+          </label>
+          <select
+            value={formData.selling_mode}
+            onChange={(e) => setFormData({ ...formData, selling_mode: e.target.value })}
+            className="w-full px-3 py-2.5 bg-white border border-emerald-300 rounded-xl focus:outline-none focus:border-emerald-600 text-xs font-bold text-emerald-950"
+          >
+            <option value="both">Both Apartments (Bulk) &amp; Individual Buyers</option>
+            <option value="apartments_only">Apartments (Bulk) Only</option>
+            <option value="individual_only">Individual Buyers Only</option>
+          </select>
+          <span className="text-[10px] text-emerald-800 block">
+            Bulk automatically stops if remaining stock drops below Min Bulk Target; Individual buyers receive stock via nearest-first dispatch.
+          </span>
         </div>
 
         {/* Submit Button */}

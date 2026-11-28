@@ -4,7 +4,7 @@ import {
   Users, Building2, Copy, Check, Share2, Clock, Star,
   Plus, MapPin, ShoppingBag, Sparkles, ArrowRight
 } from 'lucide-react';
-import api from '../../services/api';
+import api, { getImageUrl } from '../../services/api';
 import { BackButton, PageBackground } from '../../shared';
 import bg6 from '../../assets/images/bg6_hd.jpg';
 import CommunityJoinCreateModal from '../components/CommunityJoinCreateModal';
@@ -48,7 +48,7 @@ const CommunityPage = () => {
 
   // Tick every second ONLY when at least one active campaign timer exists
   useEffect(() => {
-    const hasActiveTimer = (data.orders || []).some((o) => o.status === 'campaign_active' && o.expires_at);
+    const hasActiveTimer = (data.orders || []).some((o) => Boolean(o.expires_at));
     if (!hasActiveTimer) return;
     const interval = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(interval);
@@ -96,6 +96,13 @@ const CommunityPage = () => {
   }
 
   const { community, orders, members } = data;
+  const visibleOrders = (orders || []).filter((order) => {
+    const cd = order.expires_at ? formatCountdown(order.expires_at) : null;
+    const isExpired = Boolean(order.expires_at && cd === 'Ended');
+    const hasAtLeastOne = Number(order.participants_count || 0) > 0 || Number(order.community_qty_kg || 0) > 0;
+    if (isExpired && !hasAtLeastOne) return false;
+    return true;
+  });
 
   return (
     <div className="relative w-full max-w-4xl min-w-0 overflow-x-hidden mx-auto px-3 sm:px-4 py-5 space-y-5 pb-24 md:pb-8">
@@ -203,7 +210,7 @@ const CommunityPage = () => {
               </Link>
             </div>
 
-            {orders.length === 0 ? (
+            {visibleOrders.length === 0 ? (
               <div className="bg-white rounded-3xl p-6 border border-kisan-border text-center space-y-2">
                 <p className="text-sm font-bold text-kisan-dark">No community orders yet</p>
                 <p className="text-xs text-kisan-muted">
@@ -218,17 +225,24 @@ const CommunityPage = () => {
                 </Link>
               </div>
             ) : (
-              orders.map((order) => {
-                const countdown = order.status === 'campaign_active' ? formatCountdown(order.expires_at) : null;
+              visibleOrders.map((order) => {
+                const countdown = order.expires_at ? formatCountdown(order.expires_at) : null;
+                const isExpired = Boolean(order.expires_at && countdown === 'Ended');
                 return (
                   <div key={order.id} className="bg-white rounded-3xl p-4 border border-kisan-border shadow-card space-y-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center space-x-3 min-w-0">
-                        <img
-                          src={order.product_image || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=300'}
-                          alt={order.product_name}
-                          className="w-14 h-14 rounded-2xl object-cover bg-gray-100 flex-shrink-0"
-                        />
+                        {order.product_image && order.product_image !== '/placeholder-produce.jpg' ? (
+                          <img
+                            src={getImageUrl(order.product_image)}
+                            alt={order.product_name}
+                            className="w-14 h-14 rounded-2xl object-cover bg-gray-100 flex-shrink-0"
+                          />
+                        ) : (
+                          <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-kisan-primary flex items-center justify-center flex-shrink-0">
+                            <ShoppingBag className="w-6 h-6" />
+                          </div>
+                        )}
                         <div className="min-w-0">
                           <div className="flex items-center space-x-2">
                             <h3 className="text-sm font-extrabold text-kisan-dark truncate">{order.product_name}</h3>
@@ -296,18 +310,25 @@ const CommunityPage = () => {
                             type="number"
                             min="1"
                             step="1"
+                            disabled={isExpired}
                             value={addQtyMap[order.id] ?? 2}
                             onChange={(e) => setAddQtyMap({ ...addQtyMap, [order.id]: e.target.value })}
-                            className="w-16 px-2 py-1.5 text-xs font-bold text-center border border-kisan-border rounded-xl"
+                            className="w-16 px-2 py-1.5 text-xs font-bold text-center border border-kisan-border rounded-xl disabled:opacity-50"
                           />
                           <button
                             type="button"
-                            disabled={submittingOrderId === order.id}
+                            disabled={submittingOrderId === order.id || isExpired}
                             onClick={() => handleContribute(order.id)}
-                            className="px-3.5 py-2 bg-kisan-primary hover:bg-kisan-dark text-white text-xs font-bold rounded-xl flex items-center space-x-1"
+                            className="px-3.5 py-2 bg-kisan-primary hover:bg-kisan-dark text-white text-xs font-bold rounded-xl flex items-center space-x-1 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <Plus className="w-3.5 h-3.5" />
-                            <span>{submittingOrderId === order.id ? 'Adding...' : `Add ${order.unit}`}</span>
+                            <span>
+                              {isExpired
+                                ? 'Timer Ended'
+                                : submittingOrderId === order.id
+                                  ? 'Adding...'
+                                  : `Add ${order.unit}`}
+                            </span>
                           </button>
                         </div>
                       </div>

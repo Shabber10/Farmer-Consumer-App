@@ -5,6 +5,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from flask import Flask, send_from_directory, jsonify
+from sqlalchemy import inspect, text
 from backend.config import Config
 from backend.extensions import db, jwt, cors
 from backend.routes.auth import auth_bp
@@ -34,6 +35,9 @@ def create_app(config_class=Config):
 
     # Ensure uploads directory exists
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+    # Ensure database tables and new columns exist (safe/idempotent for Render + Supabase)
+    _ensure_schema(app)
 
     # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -97,6 +101,42 @@ def create_app(config_class=Config):
         return jsonify({'error': 'Internal server error'}), 500
 
     return app
+
+
+def _ensure_schema(app):
+    """Create missing tables and add any new columns idempotently on startup."""
+    try:
+        with app.app_context():
+            db.create_all()
+            insp = inspect(db.engine)
+            is_pg = db.engine.dialect.name == 'postgresql'
+            ts_type = 'TIMESTAMP' if is_pg else 'DATETIME'
+
+            if 'products' in insp.get_table_names():
+                cols = {c['name'] for c in insp.get_columns('products')}
+                stmts = []
+                if 'selling_mode' not in cols:
+                    stmts.append("ALTER TABLE products ADD COLUMN selling_mode VARCHAR(30) NOT NULL DEFAULT 'both'")
+                if 'bulk_disabled' not in cols:
+                    stmts.append("ALTER TABLE products ADD COLUMN bulk_disabled BOOLEAN NOT NULL DEFAULT FALSE")
+                if 'dispatch_started_at' not in cols:
+                    stmts.append(f"ALTER TABLE products ADD COLUMN dispatch_started_at {ts_type}")
+                for s in stmts:
+                    db.session.execute(text(s))
+
+            if 'community_orders' in insp.get_table_names():
+                cols = {c['name'] for c in insp.get_columns('community_orders')}
+                stmts = []
+                if 'campaign_id' not in cols:
+                    stmts.append("ALTER TABLE community_orders ADD COLUMN campaign_id INTEGER")
+                if 'expires_at' not in cols:
+                    stmts.append(f"ALTER TABLE community_orders ADD COLUMN expires_at {ts_type}")
+                for s in stmts:
+                    db.session.execute(text(s))
+
+            db.session.commit()
+    except Exception as exc:
+        print(f"[schema-sync] skipped or partial: {exc}")
 
 # WSGI application instance for production
 app = create_app()

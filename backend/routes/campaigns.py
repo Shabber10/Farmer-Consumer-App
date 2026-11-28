@@ -6,8 +6,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.extensions import db
 from backend.models import (
     User, FarmerProfile, Product,
-    Community, BulkCampaign, CampaignTargetCommunity,
-    CommunityOrder, CommunityOrderItem, CommunityReview
+    Community, CommunityMember, BulkCampaign, CampaignTargetCommunity,
+    CommunityOrder, CommunityOrderItem, CommunityReview, Notification
 )
 from backend.utils_geo import haversine_meters
 from backend.export_db_excel import export_all_tables_to_excel
@@ -103,13 +103,22 @@ def create_bulk_campaign():
 
     total_stock = Decimal(str(data.get('total_stock_kg') or product.available_quantity))
     min_bulk = Decimal(str(data.get('min_bulk_kg') or product.min_bulk_quantity or 50))
-    duration_minutes = int(data.get('duration_minutes') or 180)
+    duration_minutes = int(data.get('duration_minutes') or 60)
     target_ids = data.get('target_community_ids') or []
 
-    if total_stock <= 0:
-        return jsonify({'error': 'Reserved stock must be greater than 0.'}), 400
-    if not target_ids:
-        return jsonify({'error': 'Select at least one apartment/community on the map or list.'}), 400
+    if product.selling_mode == 'individual_only':
+        return jsonify({'error': 'This product is set to Individual Only mode.'}), 400
+    if product.available_quantity < min_bulk or product.bulk_disabled:
+        return jsonify({'error': f'Remaining stock ({float(product.available_quantity)} kg) is below min bulk ({float(min_bulk)} kg). Bulk is stopped; only individual orders remain.'}), 400
+    if duration_minutes < 60 or duration_minutes > 120:
+        return jsonify({'error': 'Campaign timer must be between 60 and 120 minutes (1 hr to 2 hrs).'}), 400
+    if total_stock <= 0 or total_stock > product.available_quantity:
+        return jsonify({'error': f'Reserved stock must be between 1 and {float(product.available_quantity)} kg.'}), 400
+    if len(target_ids) != 1:
+        return jsonify({'error': 'Select exactly ONE apartment/community at a time for this campaign.'}), 400
+    existing_active = BulkCampaign.query.filter_by(product_id=product.id, status='active').first()
+    if existing_active:
+        return jsonify({'error': 'An active apartment campaign is already running for this product. Complete or lock it first.'}), 400
 
     base_price = Decimal(str(data.get('base_price') or product.price))
     tier_30 = Decimal(str(data.get('tier_30_price') or round(float(base_price) * 0.90, 2)))
@@ -169,6 +178,18 @@ def create_bulk_campaign():
                 current_qty_kg=Decimal('0.00'),
                 status='campaign_active',
                 expires_at=expires,
+            ))
+
+        # Notify every active consumer in this apartment when timer starts
+        active_members = CommunityMember.query.filter_by(community_id=comm.id, status='active').all()
+        for member in active_members:
+            db.session.add(Notification(
+                user_id=member.user_id,
+                title=f"New Apartment Deal: {product.name}",
+                message=(
+                    f"{farmer.farm_name or 'A local farmer'} selected {comm.name} for {product.name} "
+                    f"({float(total_stock)} {product.unit}). Timer started for {duration_minutes} mins — join now!"
+                ),
             ))
 
     db.session.commit()

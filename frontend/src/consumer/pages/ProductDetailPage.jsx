@@ -2,16 +2,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import {
   Sparkles, MapPin, Plus, Minus, ShoppingCart, User, ShieldCheck,
-  Star, ThumbsUp, CheckCircle2, Truck, MessageSquare, Trash2, Send
+  Star, ThumbsUp, CheckCircle2, Truck, MessageSquare, Trash2, Send, Leaf
 } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { BackButton } from '../../shared';
-import api from '../../services/api';
+import api, { getImageUrl } from '../../services/api';
 import { getLocalizedProductName, getLocalizedCategoryName, getLocalizedUnit } from '../../utils/productLocalization';
-
-const FALLBACK_IMG = 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&auto=format&fit=crop&q=80';
 
 const StarPicker = ({ value, onChange, size = 'w-6 h-6' }) => (
   <div className="flex items-center space-x-1">
@@ -172,13 +170,17 @@ const ProductDetailPage = () => {
       {/* Main Product Card */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-white rounded-2xl p-4 sm:p-6 border border-kisan-border shadow-xs">
         {/* Product Image */}
-        <div className="relative h-60 sm:h-80 rounded-2xl overflow-hidden bg-gray-100">
-          <img
-            src={product.image_url && product.image_url !== '/placeholder-produce.jpg' ? product.image_url : FALLBACK_IMG}
-            onError={(e) => { e.currentTarget.src = FALLBACK_IMG; }}
-            alt={product.name}
-            className="w-full h-full object-cover"
-          />
+        <div className="relative h-60 sm:h-80 rounded-2xl overflow-hidden bg-kisan-bg flex items-center justify-center">
+          {product.image_url && product.image_url !== '/placeholder-produce.jpg' ? (
+            <img
+              src={getImageUrl(product.image_url)}
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              alt={product.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <Leaf className="w-16 h-16 text-kisan-primary/30" />
+          )}
           {product.is_organic && (
             <span className="absolute top-3 left-3 bg-emerald-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center shadow-sm">
               <Sparkles className="w-3 h-3 mr-1" />
@@ -292,11 +294,19 @@ const ProductDetailPage = () => {
 
             <button
               onClick={handleAddToCart}
-              disabled={!product.is_available || adding}
+              disabled={!product.is_available || product.available_quantity <= 0 || product.selling_mode === 'apartments_only' || adding}
               className="w-full bg-kisan-primary text-white py-3 rounded-xl font-bold text-sm shadow-sm hover:bg-kisan-dark transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
             >
               <ShoppingCart className="w-4 h-4" />
-              <span>{adding ? 'Adding...' : `Add to Cart • ₹${(product.price * quantity).toFixed(2)}`}</span>
+              <span>
+                {product.selling_mode === 'apartments_only'
+                  ? 'Apartments Bulk Only (Unavailable for Individual)'
+                  : !product.is_available || product.available_quantity <= 0
+                    ? 'Currently Unavailable / Out of Stock'
+                    : adding
+                      ? 'Adding...'
+                      : `Add to Cart • ₹${(product.price * quantity).toFixed(2)}`}
+              </span>
             </button>
           </div>
         </div>

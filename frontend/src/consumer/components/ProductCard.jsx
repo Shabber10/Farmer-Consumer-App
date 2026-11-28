@@ -4,6 +4,7 @@ import { MapPin, Plus, Minus, ShieldCheck, Leaf, Star } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getLocalizedProductName, getLocalizedUnit } from '../../utils/productLocalization';
+import { getImageUrl } from '../../services/api';
 
 const ProductCard = ({ product, onQuickAdd, shoppingMode = 'community' }) => {
   const { addToCart, updateQuantity, removeFromCart, cart } = useCart();
@@ -52,12 +53,18 @@ const ProductCard = ({ product, onQuickAdd, shoppingMode = 'community' }) => {
     <div className="w-full min-w-0 max-w-full bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between group">
       {/* Product Image & Badges */}
       <Link to={`/buyer/product/${product.id}`} className="relative h-32 sm:h-36 overflow-hidden bg-gray-50 block">
-        <img
-          src={product.image_url || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=500&auto=format&fit=crop&q=80'}
-          alt={product.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          loading="lazy"
-        />
+        {product.image_url && product.image_url !== '/placeholder-produce.jpg' ? (
+          <img
+            src={getImageUrl(product.image_url)}
+            alt={product.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-emerald-50 text-emerald-600/70">
+            <Leaf className="w-8 h-8" />
+          </div>
+        )}
 
         {/* Minimalist Organic Badge */}
         {product.is_organic ? (
