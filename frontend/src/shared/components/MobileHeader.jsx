@@ -123,15 +123,32 @@ const MobileHeader = ({ title, showBack = false }) => {
               )}
             </button>
           )}
-          {/* Quick Language Toggle Pill */}
-          <button
-            onClick={cycleLang}
-            className="flex items-center space-x-1 bg-kisan-light text-kisan-primary text-[10px] font-black px-2.5 py-1 rounded-full border border-kisan-secondary/30 tap-effect flex-shrink-0"
-            title="Switch Language (EN / TE / HI)"
+          {/* Always-visible Language Segmented Switcher (EN | TE | HI) */}
+          <div
+            className="notranslate flex items-center bg-kisan-light rounded-full p-0.5 border border-kisan-secondary/30 flex-shrink-0"
+            role="group"
+            aria-label="Language Switcher"
           >
-            <Globe className="w-3 h-3" />
-            <span>{language.toUpperCase()}</span>
-          </button>
+            {[
+              { code: 'en', label: 'EN' },
+              { code: 'te', label: 'TE' },
+              { code: 'hi', label: 'HI' },
+            ].map((opt) => (
+              <button
+                key={opt.code}
+                type="button"
+                onClick={() => setLanguage(opt.code)}
+                className={`px-2 py-0.5 rounded-full text-[10px] font-black transition-all tap-effect ${
+                  language === opt.code
+                    ? 'bg-kisan-primary text-white shadow-xs'
+                    : 'text-kisan-primary hover:bg-emerald-100'
+                }`}
+                title={`Switch language to ${opt.label}`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

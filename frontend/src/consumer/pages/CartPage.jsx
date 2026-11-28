@@ -135,7 +135,7 @@ const CartPage = () => {
                 <h3 className="font-bold text-sm text-kisan-dark truncate">
                   {getLocalizedProductName(item.product?.name, language)}
                 </h3>
-                <p className="text-[11px] text-kisan-muted truncate">{item.product?.farm_name}</p>
+                <p className="text-[11px] text-kisan-muted truncate kd-noun">{item.product?.farm_name}</p>
                 <div className="mt-1 flex items-baseline space-x-1">
                   <span className="text-xs font-bold text-kisan-dark">₹{item.unit_price.toFixed(2)}</span>
                   <span className="text-[10px] text-kisan-muted">

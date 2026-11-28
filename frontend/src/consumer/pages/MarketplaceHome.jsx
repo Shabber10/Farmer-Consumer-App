@@ -207,7 +207,7 @@ const MarketplaceHome = () => {
                 <span>Delivering to</span>
                 <ChevronRight className="w-3 h-3 text-gray-400" />
               </span>
-              <p className="text-xs font-black text-kisan-dark truncate">
+              <p className="text-xs font-black text-kisan-dark truncate kd-noun">
                 {displayLocation}
               </p>
             </div>
@@ -220,7 +220,7 @@ const MarketplaceHome = () => {
           >
             <Users className="w-3.5 h-3.5 text-kisan-primary" />
             <span className="max-w-[120px] truncate">
-              {myCommunity ? `${myCommunity.name} (${myCommunity.members_count})` : 'My Community'}
+              {myCommunity ? <><span className="kd-noun">{myCommunity.name}</span> ({myCommunity.members_count})</> : 'My Community'}
             </span>
           </Link>
         </div>
@@ -235,7 +235,7 @@ const MarketplaceHome = () => {
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-200">
-                {myCommunity.name} • {myCommunity.members_count} neighbors
+                <span className="kd-noun">{myCommunity.name}</span> • {myCommunity.members_count} neighbors
               </p>
               <p className="text-xs font-extrabold truncate mt-0.5">
                 {communityOrders.length} active community group order(s) — Tap to view pool &amp; prices

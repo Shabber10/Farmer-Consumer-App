@@ -329,7 +329,7 @@ const FarmerOrders = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <span className="text-kisan-muted font-bold block mb-0.5">Buyer Information</span>
-                    <p className="font-semibold text-kisan-dark">{order.buyer_name}</p>
+                    <p className="font-semibold text-kisan-dark kd-noun">{order.buyer_name}</p>
                     {order.buyer_phone && (
                       <p className="text-kisan-muted flex items-center mt-0.5">
                         <Phone className="w-3 h-3 mr-1" />
@@ -341,7 +341,7 @@ const FarmerOrders = () => {
                     <span className="text-kisan-muted font-bold block mb-0.5">Delivery Location</span>
                     <p className="text-kisan-text flex items-start">
                       <MapPin className="w-3.5 h-3.5 text-kisan-primary mr-1 flex-shrink-0 mt-0.5" />
-                      <span>{order.delivery_address || 'Address provided at checkout'}</span>
+                      <span className="kd-noun">{order.delivery_address || 'Address provided at checkout'}</span>
                     </p>
                     <a
                       href={

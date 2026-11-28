@@ -86,7 +86,7 @@ const ProductCard = ({ product, onQuickAdd, shoppingMode = 'community' }) => {
           {/* Location Line */}
           <div className="flex items-center text-[10px] text-gray-500 mb-0.5 truncate">
             <MapPin className="w-2.5 h-2.5 mr-0.5 text-emerald-600 flex-shrink-0" />
-            <span className="truncate">{product.location || 'Local Farm'}</span>
+            <span className="truncate kd-noun">{product.location || 'Local Farm'}</span>
           </div>
 
           {/* Title with uniform 2-line height */}
@@ -99,7 +99,7 @@ const ProductCard = ({ product, onQuickAdd, shoppingMode = 'community' }) => {
           {/* Farmer Attribution + Star Rating */}
           <div className="flex items-center justify-between gap-1 mt-0.5">
             <div className="flex items-center space-x-1 text-[10px] text-gray-500 truncate min-w-0">
-              <span className="truncate">{product.farm_name || 'Verified Farmer'}</span>
+              <span className="truncate kd-noun">{product.farm_name || 'Verified Farmer'}</span>
               <ShieldCheck className="w-2.5 h-2.5 text-emerald-600 flex-shrink-0" />
             </div>
             {product.review_count > 0 && (

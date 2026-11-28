@@ -443,7 +443,7 @@ const CheckoutPage = () => {
                         <span className="font-extrabold text-kisan-dark">₹{Number(it.subtotal || 0).toFixed(2)}</span>
                       </div>
                       <div className="flex flex-wrap items-center justify-between text-[11px] text-kisan-muted gap-1">
-                        <span>Farmer: <b className="text-kisan-text">{p.farm_name || p.farmer_name || 'Local Farm'}</b> ({p.location})</span>
+                        <span>Farmer: <b className="text-kisan-text kd-noun">{p.farm_name || p.farmer_name || 'Local Farm'}</b> (<span className="kd-noun">{p.location}</span>)</span>
                         <span>
                           {distKm !== null ? `${distKm.toFixed(1)} km away` : `Max ≤${p.max_delivery_km ?? 15} km`} • ₹{ratePerKm}/km
                         </span>

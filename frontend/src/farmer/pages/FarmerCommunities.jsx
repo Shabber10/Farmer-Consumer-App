@@ -360,8 +360,8 @@ const FarmerCommunities = () => {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <h3 className="text-sm font-extrabold text-kisan-dark">{c.name}</h3>
-                        <p className="text-[11px] text-kisan-muted">{c.address_line}</p>
+                        <h3 className="text-sm font-extrabold text-kisan-dark kd-noun">{c.name}</h3>
+                        <p className="text-[11px] text-kisan-muted kd-noun">{c.address_line}</p>
                       </div>
                       {isSelected ? (
                         <CheckSquare className="w-5 h-5 text-kisan-primary flex-shrink-0" />

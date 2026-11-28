@@ -55,11 +55,11 @@ const FarmerDashboard = () => {
           className="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-overlay pointer-events-none"
         />
         <div>
-          <span className="text-xs uppercase tracking-wider font-semibold text-emerald-200 bg-white/10 px-3 py-1 rounded-full">
+          <span className="text-xs uppercase tracking-wider font-semibold text-emerald-200 bg-white/10 px-3 py-1 rounded-full kd-noun">
             {data?.farmer?.farm_name || 'Farmer Portal'}
           </span>
           <h1 className="text-2xl sm:text-3xl font-extrabold mt-2">
-            Welcome, {user?.full_name || 'Kisan'}!
+            Welcome, <span className="kd-noun">{user?.full_name || 'Kisan'}</span>!
           </h1>
           <p className="text-xs sm:text-sm text-emerald-100 mt-1 max-w-lg">
             Manage your harvest inventory, accept direct buyer orders, and track your fair earnings without middlemen.
@@ -194,7 +194,7 @@ const FarmerDashboard = () => {
                     </span>
                   </div>
                   <p className="text-xs text-kisan-muted mt-0.5">
-                    Buyer: <span className="font-medium text-kisan-text">{order.buyer_name}</span> • {order.items?.length || 0} items
+                    Buyer: <span className="font-medium text-kisan-text kd-noun">{order.buyer_name}</span> • {order.items?.length || 0} items
                   </p>
                 </div>
 

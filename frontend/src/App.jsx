@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { LanguageProvider } from './contexts/LanguageContext';
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { CartProvider } from './contexts/CartContext';
 import { BackgroundProvider } from './contexts/BackgroundContext';
 import { NavigationProvider } from './contexts/NavigationContext';
@@ -77,6 +77,7 @@ const RootRedirect = () => {
 function AppContent() {
   const location = useLocation();
   const { isAuthenticated } = useAuth();
+  const { language, setLanguage } = useLanguage();
   const [keyboardOpen, setKeyboardOpen] = useState(false);
 
   // Keep focused text inputs visible above the soft keyboard without jumping the whole screen
@@ -138,7 +139,32 @@ function AppContent() {
   return (
     <MobilePhoneFrame>
       <div className="flex flex-col min-h-screen min-h-[100dvh] w-full max-w-full overflow-x-hidden bg-kisan-bg text-kisan-text">
-        {!isAuthOrOnboarding && <MobileHeader />}
+        {!isAuthOrOnboarding ? (
+          <MobileHeader />
+        ) : (
+          <div className="notranslate sticky top-0 z-30 flex justify-end px-4 pt-3 pb-1 bg-transparent">
+            <div className="flex items-center bg-white/95 backdrop-blur-md rounded-full p-0.5 border border-kisan-border shadow-sm">
+              {[
+                { code: 'en', label: 'EN' },
+                { code: 'te', label: 'TE' },
+                { code: 'hi', label: 'HI' },
+              ].map((opt) => (
+                <button
+                  key={opt.code}
+                  type="button"
+                  onClick={() => setLanguage(opt.code)}
+                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-black transition-all ${
+                    language === opt.code
+                      ? 'bg-kisan-primary text-white shadow-xs'
+                      : 'text-kisan-primary hover:bg-emerald-50'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <main className={`flex-1 flex flex-col w-full max-w-full min-w-0 overflow-x-hidden ${keyboardOpen ? 'pb-[45vh]' : isAuthenticated ? 'pb-24 sm:pb-28' : 'pb-0'}`}>
           <Routes>
           {/* Landing / Root */}

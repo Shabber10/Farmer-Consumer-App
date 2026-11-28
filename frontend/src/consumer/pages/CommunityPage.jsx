@@ -180,10 +180,12 @@ const CommunityPage = () => {
                 <span className="text-[10px] font-bold uppercase tracking-wider bg-white/15 px-2.5 py-0.5 rounded-full text-emerald-200">
                   {community.community_type}
                 </span>
-                <h1 className="text-xl font-black mt-1.5 truncate">{community.name}</h1>
+                <h1 className="text-xl font-black mt-1.5 truncate kd-noun">{community.name}</h1>
                 <p className="text-xs text-emerald-100 flex items-center space-x-1 mt-0.5">
                   <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span className="truncate">{community.address_line} • Drop: {community.dropoff_point}</span>
+                  <span className="truncate kd-noun">{community.address_line}</span>
+                  <span>• Drop:</span>
+                  <span className="truncate kd-noun">{community.dropoff_point}</span>
                 </p>
               </div>
               <button
@@ -297,7 +299,7 @@ const CommunityPage = () => {
                             </span>
                           </div>
                           <p className="text-[11px] text-kisan-muted truncate">
-                            {order.farm_name} • Shared by {order.initiated_by_name}
+                            <span className="kd-noun">{order.farm_name}</span> • Shared by <span className="kd-noun">{order.initiated_by_name}</span>
                           </p>
                           {order.title_note && (
                             <p className="text-[11px] text-gray-600 italic mt-0.5">&ldquo;{order.title_note}&rdquo;</p>
@@ -460,12 +462,12 @@ const CommunityPage = () => {
           {/* Members List (privacy-safe: names & roles only) */}
           <div className="bg-white rounded-3xl p-4 border border-kisan-border space-y-2">
             <h3 className="text-xs font-extrabold text-kisan-dark uppercase tracking-wider">
-              Neighbors in {community.name} ({members.length})
+              Neighbors in <span className="kd-noun">{community.name}</span> ({members.length})
             </h3>
             <div className="flex flex-wrap gap-2">
               {members.map((m) => (
                 <span key={m.id} className="text-xs font-semibold bg-emerald-50 text-emerald-900 px-3 py-1 rounded-full border border-emerald-200">
-                  {m.full_name} {m.role === 'admin' ? '(Admin)' : ''}
+                  <span className="kd-noun">{m.full_name}</span> {m.role === 'admin' ? '(Admin)' : ''}
                 </span>
               ))}
             </div>
