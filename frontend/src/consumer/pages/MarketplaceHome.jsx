@@ -188,7 +188,7 @@ const MarketplaceHome = () => {
   };
 
   return (
-    <div className="relative w-full max-w-full min-w-0 overflow-x-hidden mx-auto px-3 sm:px-4 py-3 sm:py-4 space-y-3.5 pb-28 md:pb-8">
+    <div className="relative w-full max-w-7xl min-w-0 overflow-x-hidden mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-4 space-y-3 pb-28 md:pb-8">
       <PageBackground image={bg6} />
 
       {/* Floating Toast Notification */}
@@ -200,213 +200,161 @@ const MarketplaceHome = () => {
       )}
 
       {/* ======================================================== */}
-      {/* 1. TOP DELIVERY BAR & GREETING                           */}
+      {/* 1. COMPACT COMMAND BAR: LOCATION + SEARCH + COMMUNITY     */}
       {/* ======================================================== */}
-      <div className="bg-white/95 backdrop-blur-md rounded-2xl p-3 sm:p-3.5 border border-kisan-border shadow-2xs">
-        <div className="flex items-center justify-between gap-2">
-          {/* Delivering Location Pill */}
-          <button
-            type="button"
-            onClick={() => setShowLocationModal(true)}
-            className="flex items-center space-x-2 text-left min-w-0 hover:bg-gray-50 p-1 rounded-xl transition-colors"
-          >
-            <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0">
-              <MapPin className="w-4 h-4" />
-            </div>
-            <div className="min-w-0">
-              <span className="text-[10px] font-bold text-gray-500 tracking-wide uppercase flex items-center space-x-1">
-                <span>Delivering to</span>
-                <ChevronRight className="w-3 h-3 text-gray-400" />
+      <div className="bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border border-kisan-border shadow-2xs space-y-2.5">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-2">
+          <div className="flex items-center justify-between gap-2 lg:contents">
+            <button
+              type="button"
+              onClick={() => setShowLocationModal(true)}
+              className="flex items-center space-x-2 text-left min-w-0 hover:bg-gray-50 px-2 py-1 rounded-xl transition-colors lg:order-1 lg:max-w-[230px]"
+            >
+              <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0">
+                <MapPin className="w-3.5 h-3.5" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-[9px] font-bold text-gray-500 tracking-wide uppercase flex items-center space-x-0.5">
+                  <span>Delivering to</span>
+                  <ChevronRight className="w-2.5 h-2.5 text-gray-400" />
+                </span>
+                <p className="text-xs font-black text-kisan-dark truncate kd-noun">
+                  {displayLocation}
+                </p>
+              </div>
+            </button>
+
+            <Link
+              to="/buyer/community"
+              className={`lg:order-3 flex items-center space-x-1.5 px-3 py-2 rounded-xl text-[11px] font-bold transition-all flex-shrink-0 ${
+                myCommunity && communityOrders.length > 0
+                  ? 'bg-gradient-to-r from-emerald-800 to-teal-900 text-white shadow-xs'
+                  : 'bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900'
+              }`}
+            >
+              <Users className={`w-3.5 h-3.5 ${myCommunity && communityOrders.length > 0 ? 'text-emerald-300' : 'text-kisan-primary'}`} />
+              <span className="max-w-[190px] sm:max-w-[260px] truncate">
+                {myCommunity ? (
+                  <>
+                    <span className="kd-noun">{myCommunity.name}</span> ({myCommunity.members_count})
+                    {communityOrders.length > 0 ? ` • ${communityOrders.length} Pool${communityOrders.length > 1 ? 's' : ''}` : ''}
+                  </>
+                ) : (
+                  'My Community'
+                )}
               </span>
-              <p className="text-xs font-black text-kisan-dark truncate kd-noun">
-                {displayLocation}
-              </p>
-            </div>
-          </button>
-
-          {/* My Community Quick Link (no default timer) */}
-          <Link
-            to="/buyer/community"
-            className="flex items-center space-x-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900 px-3 py-2 rounded-xl text-[11px] font-bold transition-all flex-shrink-0"
-          >
-            <Users className="w-3.5 h-3.5 text-kisan-primary" />
-            <span className="max-w-[120px] truncate">
-              {myCommunity ? <><span className="kd-noun">{myCommunity.name}</span> ({myCommunity.members_count})</> : 'My Community'}
-            </span>
-          </Link>
-        </div>
-      </div>
-
-      {/* Show a clean community banner ONLY when the user's community has live deals (no fake default timer) */}
-      {myCommunity && communityOrders.length > 0 && (
-        <Link
-          to="/buyer/community"
-          className="block bg-gradient-to-r from-emerald-800 to-teal-900 rounded-2xl p-3.5 text-white shadow-xs border border-emerald-700/40"
-        >
-          <div className="flex items-center justify-between gap-2">
-            <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-200">
-                <span className="kd-noun">{myCommunity.name}</span> • {myCommunity.members_count} neighbors
-              </p>
-              <p className="text-xs font-extrabold truncate mt-0.5">
-                {communityOrders.length} active community group order(s) — Tap to view pool &amp; prices
-              </p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-emerald-200 flex-shrink-0" />
+              <ChevronRight className="w-3.5 h-3.5 opacity-80 flex-shrink-0" />
+            </Link>
           </div>
-        </Link>
-      )}
 
-      {/* ======================================================== */}
-      {/* 3. SEARCH BAR & QUICK CHIPS                              */}
-      {/* ======================================================== */}
-      <div className="space-y-2">
-        <div className="flex items-center space-x-2">
-          <form onSubmit={handleSearchSubmit} className="flex-1 relative">
-            <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t('searchProducePlaceholder')}
-              className="w-full pl-10 pr-9 py-2.5 sm:py-3 bg-white border border-kisan-border rounded-2xl text-xs sm:text-sm shadow-2xs focus:outline-none focus:border-emerald-600 focus:bg-white transition-colors"
-            />
-            {search && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearch('');
-                  setActiveChip('All');
-                  fetchProducts();
-                }}
-                className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </form>
+          <div className="flex items-center space-x-2 flex-1 min-w-0 lg:order-2">
+            <form onSubmit={handleSearchSubmit} className="flex-1 relative">
+              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t('searchProducePlaceholder')}
+                className="w-full pl-9 pr-8 py-2 bg-gray-50/80 border border-kisan-border rounded-xl text-xs sm:text-sm focus:outline-none focus:border-emerald-600 focus:bg-white transition-colors"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearch('');
+                    setActiveChip('All');
+                    fetchProducts();
+                  }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </form>
 
-          <button
-            type="button"
-            onClick={() => setShowFilterModal(true)}
-            className="p-2.5 sm:p-3 bg-white border border-kisan-border rounded-2xl text-gray-700 hover:text-emerald-700 shadow-2xs flex items-center space-x-1.5 transition-colors"
-            title="Filter Produce"
-          >
-            <SlidersHorizontal className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span className="hidden sm:inline text-xs font-bold">{t('filter')}</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setShowFilterModal(true)}
+              className="px-3 py-2 bg-gray-50/80 hover:bg-emerald-50 border border-kisan-border rounded-xl text-gray-700 hover:text-emerald-700 flex items-center space-x-1.5 transition-colors flex-shrink-0"
+              title="Filter"
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              <span className="hidden sm:inline text-xs font-bold">{t('filter')}</span>
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* ======================================================== */}
-      {/* 4. VISUAL CATEGORIES SECTION                             */}
-      {/* ======================================================== */}
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between px-1">
-          <h3 className="text-xs font-extrabold text-kisan-dark tracking-wide uppercase">
-            {t('farmCategories')}
-          </h3>
-          {selectedCategory && (
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2 pt-2 border-t border-gray-100">
+          <div className="w-full lg:w-auto lg:flex-1 min-w-0 flex items-center space-x-1.5 overflow-x-auto no-scrollbar py-0.5">
             <button
               type="button"
               onClick={() => setSelectedCategory(null)}
-              className="text-[11px] font-bold text-emerald-700 hover:underline"
+              className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap flex-shrink-0 border transition-all ${
+                selectedCategory === null
+                  ? 'bg-emerald-700 text-white border-emerald-700 shadow-2xs'
+                  : 'bg-gray-50 text-gray-800 border-kisan-border hover:bg-emerald-50'
+              }`}
             >
-              {t('allCategories')}
+              <span>🌱</span>
+              <span>{t('allCrops')}</span>
             </button>
-          )}
-        </div>
 
-        <div className="w-full max-w-full flex items-center space-x-2.5 overflow-x-auto no-scrollbar py-1">
-          {/* All Produce Pill */}
-          <button
-            type="button"
-            onClick={() => setSelectedCategory(null)}
-            className={`flex flex-col items-center justify-center min-w-[70px] sm:min-w-[80px] p-2.5 rounded-2xl border transition-all shadow-2xs ${
-              selectedCategory === null
-                ? 'bg-emerald-700 text-white border-emerald-700 shadow-xs'
-                : 'bg-white text-gray-800 border-kisan-border hover:bg-gray-50'
-            }`}
-          >
-            <span className="text-xl mb-1">🌱</span>
-            <span className="text-[11px] font-bold leading-tight">{t('allCrops')}</span>
-          </button>
+            {categories.map((c) => {
+              const emoji = CATEGORY_EMOJIS[c.name] || '🌾';
+              const isSelected = selectedCategory === c.id;
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setSelectedCategory(c.id)}
+                  className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap flex-shrink-0 border transition-all ${
+                    isSelected
+                      ? 'bg-emerald-700 text-white border-emerald-700 shadow-2xs'
+                      : 'bg-gray-50 text-gray-800 border-kisan-border hover:bg-emerald-50'
+                  }`}
+                >
+                  <span>{emoji}</span>
+                  <span>{getLocalizedCategoryName(c.name, language)}</span>
+                </button>
+              );
+            })}
+          </div>
 
-          {/* Dynamic Categories */}
-          {categories.map((c) => {
-            const emoji = CATEGORY_EMOJIS[c.name] || '🌾';
-            const isSelected = selectedCategory === c.id;
-            return (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => setSelectedCategory(c.id)}
-                className={`flex flex-col items-center justify-center min-w-[70px] sm:min-w-[80px] p-2.5 rounded-2xl border transition-all shadow-2xs ${
-                  isSelected
-                    ? 'bg-emerald-700 text-white border-emerald-700 shadow-xs'
-                    : 'bg-white text-gray-800 border-kisan-border hover:bg-gray-50'
-                }`}
+          <div className="flex items-center justify-between lg:justify-end gap-2 flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => setOnlyOrganic(!onlyOrganic)}
+              className={`px-3 py-1.5 rounded-xl font-bold text-[11px] flex items-center space-x-1 border transition-all ${
+                onlyOrganic
+                  ? 'bg-emerald-700 text-white border-emerald-700 shadow-2xs'
+                  : 'bg-white text-gray-700 border-kisan-border hover:border-emerald-500'
+              }`}
+            >
+              <Leaf className={`w-3.5 h-3.5 ${onlyOrganic ? 'text-emerald-200' : 'text-emerald-500'}`} />
+              <span>100% Organic Only</span>
+            </button>
+
+            <div className="flex items-center space-x-1.5">
+              <span className="hidden sm:inline text-[11px] text-kisan-muted font-semibold">Sort:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="bg-white border border-kisan-border rounded-xl px-2.5 py-1.5 text-xs font-bold text-gray-800 focus:outline-none"
               >
-                <span className="text-xl mb-1">{emoji}</span>
-                <span className="text-[11px] font-bold leading-tight truncate max-w-[70px]">
-                  {getLocalizedCategoryName(c.name, language)}
-                </span>
-              </button>
-            );
-          })}
+                <option value="newest">Recently Harvested</option>
+                <option value="price_asc">Price: Low to High</option>
+                <option value="price_desc">Price: High to Low</option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* ======================================================== */}
-      {/* 5. DIRECT FARM TRANSPARENCY BANNER                       */}
-      {/* ======================================================== */}
-      <div className="grid grid-cols-3 gap-2 bg-gradient-to-r from-emerald-50 via-teal-50 to-green-50 p-2.5 rounded-2xl border border-emerald-200/60 text-center">
-        <div className="flex flex-col items-center p-1">
-          <Truck className="w-4 h-4 text-emerald-700 mb-1" />
-          <span className="text-[10px] font-black text-emerald-950 leading-tight">{t('direct100')}</span>
-          <span className="text-[9px] text-gray-500">{t('zeroMiddlemen')}</span>
-        </div>
-        <div className="flex flex-col items-center p-1 border-x border-emerald-200/50">
-          <Clock className="w-4 h-4 text-emerald-700 mb-1" />
-          <span className="text-[10px] font-black text-emerald-950 leading-tight">{t('dawnHarvest')}</span>
-          <span className="text-[9px] text-gray-500">{t('dawnHarvestSub')}</span>
-        </div>
-        <div className="flex flex-col items-center p-1">
-          <ShieldCheck className="w-4 h-4 text-emerald-700 mb-1" />
-          <span className="text-[10px] font-black text-emerald-950 leading-tight">{t('fairPrice')}</span>
-          <span className="text-[9px] text-gray-500">{t('farmerShare')}</span>
-        </div>
-      </div>
-
-      {/* ======================================================== */}
-      {/* 6. PRODUCTS HEADER & SORTING                             */}
-      {/* ======================================================== */}
-      <div className="flex items-center justify-between text-xs text-kisan-muted px-1 pt-1">
-        <button
-          type="button"
-          onClick={() => setOnlyOrganic(!onlyOrganic)}
-          className={`px-3 py-1.5 rounded-xl font-bold text-[11px] flex items-center space-x-1 border transition-all ${
-            onlyOrganic
-              ? 'bg-emerald-700 text-white border-emerald-700 shadow-2xs'
-              : 'bg-white text-gray-700 border-kisan-border hover:border-emerald-500'
-          }`}
-        >
-          <Leaf className="w-3.5 h-3.5 text-emerald-500" />
-          <span>100% Organic Only</span>
-        </button>
-
-        <div className="flex items-center space-x-1.5">
-          <span className="hidden sm:inline font-semibold">Sort:</span>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="bg-white border border-kisan-border rounded-xl px-2.5 py-1 text-xs font-bold text-gray-800 focus:outline-none"
-          >
-            <option value="newest">Recently Harvested</option>
-            <option value="price_asc">Price: Low to High</option>
-            <option value="price_desc">Price: High to Low</option>
-          </select>
-        </div>
+      {/* Slim Farm Guarantee Strip */}
+      <div className="flex flex-wrap items-center justify-center sm:justify-between gap-x-4 gap-y-1 bg-emerald-50/80 border border-emerald-200/60 rounded-xl px-3.5 py-1.5 text-[10px] sm:text-[11px] font-bold text-emerald-950">
+        <span className="inline-flex items-center space-x-1"><Truck className="w-3.5 h-3.5 text-emerald-700" /><span>{t('direct100')} · {t('zeroMiddlemen')}</span></span>
+        <span className="inline-flex items-center space-x-1"><Clock className="w-3.5 h-3.5 text-emerald-700" /><span>{t('dawnHarvest')} · {t('dawnHarvestSub')}</span></span>
+        <span className="inline-flex items-center space-x-1"><ShieldCheck className="w-3.5 h-3.5 text-emerald-700" /><span>{t('fairPrice')} · {t('farmerShare')}</span></span>
       </div>
 
       {/* ======================================================== */}

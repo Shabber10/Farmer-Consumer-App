@@ -50,110 +50,118 @@ const FarmerDashboard = () => {
   };
 
   return (
-    <div className="relative max-w-6xl mx-auto px-4 py-6 sm:py-8 space-y-6 pb-20 md:pb-8">
+    <div className="relative max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-5 space-y-4 pb-20 md:pb-8">
       <PageBackground image={bg7} />
-      {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-kisan-primary to-kisan-dark rounded-3xl p-6 sm:p-8 text-white shadow-card flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative overflow-hidden">
-        <img
-          src={bg7}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-overlay pointer-events-none"
-        />
-        <div>
-          <span className="text-xs uppercase tracking-wider font-semibold text-emerald-200 bg-white/10 px-3 py-1 rounded-full kd-noun">
-            {data?.farmer?.farm_name || 'Farmer Portal'}
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold mt-2">
-            Welcome, <span className="kd-noun">{user?.full_name || 'Kisan'}</span>!
-          </h1>
-          <p className="text-xs sm:text-sm text-emerald-100 mt-1 max-w-lg">
-            Manage your harvest inventory, accept direct buyer orders, and track your fair earnings without middlemen.
-          </p>
+      {/* Top Row: Compact Welcome + Community Hub side-by-side on desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        <div className="lg:col-span-8 bg-gradient-to-r from-kisan-primary to-kisan-dark rounded-2xl p-4 sm:p-5 text-white shadow-card flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative overflow-hidden">
+          <img
+            src={bg7}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-overlay pointer-events-none"
+          />
+          <div className="relative z-10 min-w-0">
+            <span className="text-[10px] uppercase tracking-wider font-semibold text-emerald-200 bg-white/10 px-2.5 py-0.5 rounded-full kd-noun">
+              {data?.farmer?.farm_name || 'Farmer Portal'}
+            </span>
+            <h1 className="text-xl sm:text-2xl font-extrabold mt-1.5">
+              Welcome, <span className="kd-noun">{user?.full_name || 'Kisan'}</span>!
+            </h1>
+            <p className="text-xs text-emerald-100 mt-0.5 max-w-lg">
+              Manage your harvest inventory, fulfill direct orders, and track earnings without middlemen.
+            </p>
+          </div>
+
+          <Link
+            to="/farmer/add-product"
+            className="relative z-10 bg-white text-kisan-primary hover:bg-emerald-50 px-4 py-2.5 rounded-xl font-bold text-xs shadow-md flex items-center justify-center space-x-1.5 transition-all self-start sm:self-auto flex-shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{t('addProduct')}</span>
+          </Link>
         </div>
 
+        {/* Community Discovery & Bulk Campaigns Shortcut */}
         <Link
-          to="/farmer/add-product"
-          className="bg-white text-kisan-primary hover:bg-emerald-50 px-5 py-3 rounded-2xl font-bold text-xs sm:text-sm shadow-md flex items-center justify-center space-x-2 transition-all self-start sm:self-auto"
+          to="/farmer/communities"
+          className="lg:col-span-4 bg-white rounded-2xl p-4 border-2 border-emerald-200 hover:border-kisan-primary shadow-card transition-all flex flex-col justify-between gap-2"
         >
-          <Plus className="w-4 h-4" />
-          <span>{t('addProduct')}</span>
+          <div>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+              Community Hub
+            </span>
+            <h3 className="text-sm font-extrabold text-kisan-dark mt-1.5">
+              Nearby Apartments &amp; Bulk Campaigns
+            </h3>
+            <p className="text-[11px] text-kisan-muted mt-0.5 line-clamp-2">
+              View community demand, ratings, and lock consolidated bulk orders.
+            </p>
+          </div>
+          <span className="inline-flex items-center space-x-1 text-xs font-extrabold text-kisan-primary">
+            <span>Open Apartments Hub</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </span>
         </Link>
       </div>
 
-      {/* Community Discovery & Bulk Campaigns Shortcut */}
-      <Link
-        to="/farmer/communities"
-        className="block bg-white rounded-2xl p-4 border-2 border-emerald-200 hover:border-kisan-primary shadow-card transition-all"
-      >
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full">
-              Hybrid Community Marketplace
-            </span>
-            <h3 className="text-sm sm:text-base font-extrabold text-kisan-dark mt-1">
-              Discover Nearby Apartments &amp; Launch Reserved Campaigns
-            </h3>
-            <p className="text-xs text-kisan-muted">
-              Select apartments on map or list, view past farmer ratings, fulfill community demand, and lock consolidated deliveries.
-            </p>
+      {/* Compact Metrics Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3">
+        <div className="bg-white p-3 sm:p-4 rounded-2xl border border-kisan-border shadow-card">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs text-kisan-muted font-medium">{t('totalEarnings')}</span>
+            <div className="w-8 h-8 rounded-lg bg-emerald-100 text-kisan-primary flex items-center justify-center">
+              <IndianRupee className="w-4 h-4" />
+            </div>
           </div>
-          <span className="px-4 py-2 bg-kisan-primary text-white text-xs font-bold rounded-xl flex items-center space-x-1 flex-shrink-0">
-            <span>Open</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </span>
-        </div>
-      </Link>
-
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-kisan-border shadow-card">
-          <div className="w-10 h-10 rounded-xl bg-emerald-100 text-kisan-primary flex items-center justify-center mb-3">
-            <IndianRupee className="w-5 h-5" />
-          </div>
-          <span className="text-xs text-kisan-muted font-medium">{t('totalEarnings')}</span>
-          <h3 className="text-xl sm:text-2xl font-black text-kisan-dark mt-0.5">
+          <h3 className="text-lg sm:text-xl font-black text-kisan-dark">
             ₹{metrics.total_earnings.toFixed(2)}
           </h3>
-          <span className="text-[11px] text-emerald-700 font-semibold block mt-1">
+          <span className="text-[11px] text-emerald-700 font-semibold block mt-0.5">
             + ₹{metrics.pending_earnings.toFixed(2)} pending
           </span>
         </div>
 
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-kisan-border shadow-card">
-          <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center mb-3">
-            <ShoppingBag className="w-5 h-5" />
+        <div className="bg-white p-3 sm:p-4 rounded-2xl border border-kisan-border shadow-card">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs text-kisan-muted font-medium">{t('totalOrders')}</span>
+            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
+              <ShoppingBag className="w-4 h-4" />
+            </div>
           </div>
-          <span className="text-xs text-kisan-muted font-medium">{t('totalOrders')}</span>
-          <h3 className="text-xl sm:text-2xl font-black text-kisan-dark mt-0.5">
+          <h3 className="text-lg sm:text-xl font-black text-kisan-dark">
             {metrics.total_orders}
           </h3>
-          <span className="text-[11px] text-blue-700 font-semibold block mt-1">
+          <span className="text-[11px] text-blue-700 font-semibold block mt-0.5">
             Lifetime orders
           </span>
         </div>
 
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-kisan-border shadow-card">
-          <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mb-3">
-            <Clock className="w-5 h-5" />
+        <div className="bg-white p-3 sm:p-4 rounded-2xl border border-kisan-border shadow-card">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs text-kisan-muted font-medium">{t('pendingOrders')}</span>
+            <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
+              <Clock className="w-4 h-4" />
+            </div>
           </div>
-          <span className="text-xs text-kisan-muted font-medium">{t('pendingOrders')}</span>
-          <h3 className="text-xl sm:text-2xl font-black text-kisan-dark mt-0.5">
+          <h3 className="text-lg sm:text-xl font-black text-kisan-dark">
             {metrics.pending_orders}
           </h3>
-          <span className="text-[11px] text-amber-700 font-semibold block mt-1">
+          <span className="text-[11px] text-amber-700 font-semibold block mt-0.5">
             Requires action
           </span>
         </div>
 
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-kisan-border shadow-card">
-          <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center mb-3">
-            <Layers className="w-5 h-5" />
+        <div className="bg-white p-3 sm:p-4 rounded-2xl border border-kisan-border shadow-card">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs text-kisan-muted font-medium">{t('activeProducts')}</span>
+            <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center">
+              <Layers className="w-4 h-4" />
+            </div>
           </div>
-          <span className="text-xs text-kisan-muted font-medium">{t('activeProducts')}</span>
-          <h3 className="text-xl sm:text-2xl font-black text-kisan-dark mt-0.5">
+          <h3 className="text-lg sm:text-xl font-black text-kisan-dark">
             {metrics.active_products}
           </h3>
-          <span className="text-[11px] text-purple-700 font-semibold block mt-1">
+          <span className="text-[11px] text-purple-700 font-semibold block mt-0.5">
             In live marketplace
           </span>
         </div>

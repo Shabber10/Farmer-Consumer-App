@@ -5,28 +5,64 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useNavigation } from '../../contexts/NavigationContext';
 import api from '../../services/api';
+import { getNotificationPermission, requestNotificationPermission, sendSystemNotificationIfAllowed } from '../../utils/notificationService';
 import brandLogo from '../../assets/images/kisan_direct_brand_logo.png';
 import appLogo from '../../assets/images/app_logo.png';
 
 const MobileHeader = ({ title, showBack = false }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { role, isAuthenticated } = useAuth();
+  const { role, isAuthenticated, user } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const { goBack, isRootRoute } = useNavigation();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifs, setShowNotifs] = useState(false);
+  const [notifPermission, setNotifPermission] = useState('default');
 
   useEffect(() => {
     if (!isAuthenticated || !['buyer', 'farmer'].includes(role)) return;
     let active = true;
+
+    const initPerm = async () => {
+      let perm = await getNotificationPermission();
+      if (!active) return;
+      if (perm === 'default' && !localStorage.getItem('kd_notif_prompted')) {
+        localStorage.setItem('kd_notif_prompted', '1');
+        perm = await requestNotificationPermission();
+      }
+      if (active) setNotifPermission(perm);
+    };
+    initPerm();
+
     const fetchNotifs = async () => {
       try {
         const res = await api.get('/api/notifications');
         if (!active) return;
-        setNotifications(res.data.notifications || []);
+        const list = res.data.notifications || [];
+        setNotifications(list);
         setUnreadCount(res.data.unread_count || 0);
+
+        const seenKey = `kd_seen_notif_ids_${user?.id || role}`;
+        const rawSeen = localStorage.getItem(seenKey);
+        if (rawSeen === null) {
+          localStorage.setItem(seenKey, JSON.stringify(list.map((n) => n.id).slice(-200)));
+        } else {
+          let seenSet;
+          try {
+            seenSet = new Set(JSON.parse(rawSeen) || []);
+          } catch {
+            seenSet = new Set();
+          }
+          const unseenUnread = list.filter((n) => !n.is_read && !seenSet.has(n.id));
+          if (unseenUnread.length > 0) {
+            unseenUnread.forEach((n) => {
+              seenSet.add(n.id);
+              sendSystemNotificationIfAllowed(n.title, n.message, n.id);
+            });
+            localStorage.setItem(seenKey, JSON.stringify(Array.from(seenSet).slice(-200)));
+          }
+        }
       } catch {
         // ignore polling error
       }
@@ -44,7 +80,7 @@ const MobileHeader = ({ title, showBack = false }) => {
       window.removeEventListener('focus', onWake);
       document.removeEventListener('visibilitychange', onWake);
     };
-  }, [isAuthenticated, role, location.pathname]);
+  }, [isAuthenticated, role, user?.id, location.pathname]);
 
   const handleMarkAllRead = async () => {
     try {
@@ -176,6 +212,27 @@ const MobileHeader = ({ title, showBack = false }) => {
               </button>
             </div>
           </div>
+          {notifPermission !== 'unsupported' && (
+            <div className="flex items-center justify-between px-2 py-1.5 rounded-xl bg-gray-50 border border-gray-100 text-[10px]">
+              <span className="text-kisan-muted font-semibold">
+                {notifPermission === 'granted'
+                  ? 'Push Alerts: Active on this device'
+                  : 'Push Alerts Off — Showing in Bell icon only'}
+              </span>
+              {notifPermission !== 'granted' && notifPermission !== 'denied' && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const p = await requestNotificationPermission();
+                    setNotifPermission(p);
+                  }}
+                  className="font-extrabold text-kisan-primary hover:underline ml-2"
+                >
+                  Allow
+                </button>
+              )}
+            </div>
+          )}
           {notifications.length === 0 ? (
             <p className="text-[11px] text-kisan-muted py-2 text-center">No notifications yet</p>
           ) : (

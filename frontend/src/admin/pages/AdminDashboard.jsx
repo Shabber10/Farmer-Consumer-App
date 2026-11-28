@@ -438,23 +438,23 @@ const AdminDashboard = () => {
   const farmersList = usersList.filter(u => u.role === 'farmer');
 
   return (
-    <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="relative max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-5 space-y-4">
       <PageBackground image={bg9} />
       {/* Top Banner */}
-      <div className="bg-gradient-to-r from-kisan-dark via-kisan-primary to-emerald-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+      <div className="bg-gradient-to-r from-kisan-dark via-kisan-primary to-emerald-900 rounded-2xl p-4 sm:p-5 text-white shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
         <img
           src={bg9}
           alt=""
           className="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-overlay pointer-events-none"
         />
-        <div>
-          <div className="flex items-center space-x-2 text-emerald-300 text-xs font-bold uppercase tracking-wider mb-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+        <div className="relative z-10">
+          <div className="flex items-center space-x-2 text-emerald-300 text-[10px] font-bold uppercase tracking-wider mb-1">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
             <span>Full Access Administrator Portal</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black">Platform Command Center</h1>
-          <p className="text-xs sm:text-sm text-emerald-100/90 mt-1">
-            Logged in as <span className="font-bold underline">{user?.email || 'admin@gmail.com'}</span>. You have master privileges to manage, edit, and delete any user, product, or order.
+          <h1 className="text-xl sm:text-2xl font-black">Platform Command Center</h1>
+          <p className="text-xs text-emerald-100/90 mt-0.5">
+            Logged in as <span className="font-bold underline">{user?.email || 'admin@gmail.com'}</span>. Manage users, products, orders &amp; communities.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 relative z-10">
@@ -501,58 +501,58 @@ const AdminDashboard = () => {
       )}
 
       {/* Key Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4">
-        <div className="bg-white p-4 rounded-2xl border border-kisan-border shadow-card">
-          <div className="flex items-center justify-between text-kisan-muted text-xs font-semibold mb-1">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
+        <div className="bg-white p-3 rounded-2xl border border-kisan-border shadow-card">
+          <div className="flex items-center justify-between text-kisan-muted text-[11px] font-semibold mb-0.5">
             <span>Sales GMV</span>
-            <TrendingUp className="w-4 h-4 text-emerald-600" />
+            <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
           </div>
-          <p className="text-xl font-black text-kisan-dark">₹{Number(stats?.total_gmv || 0).toLocaleString('en-IN')}</p>
+          <p className="text-lg font-black text-kisan-dark">₹{Number(stats?.total_gmv || 0).toLocaleString('en-IN')}</p>
           <span className="text-[10px] text-emerald-700 font-bold">Platform Gross</span>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-kisan-border shadow-card">
-          <div className="flex items-center justify-between text-kisan-muted text-xs font-semibold mb-1">
+        <div className="bg-white p-3 rounded-2xl border border-kisan-border shadow-card">
+          <div className="flex items-center justify-between text-kisan-muted text-[11px] font-semibold mb-0.5">
             <span>Orders</span>
-            <Package className="w-4 h-4 text-amber-600" />
+            <Package className="w-3.5 h-3.5 text-amber-600" />
           </div>
-          <p className="text-xl font-black text-kisan-dark">{stats?.total_orders || 0}</p>
+          <p className="text-lg font-black text-kisan-dark">{stats?.total_orders || 0}</p>
           <span className="text-[10px] text-amber-700 font-bold">Total Placed</span>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-kisan-border shadow-card">
-          <div className="flex items-center justify-between text-kisan-muted text-xs font-semibold mb-1">
+        <div className="bg-white p-3 rounded-2xl border border-kisan-border shadow-card">
+          <div className="flex items-center justify-between text-kisan-muted text-[11px] font-semibold mb-0.5">
             <span>Products</span>
-            <ShoppingBag className="w-4 h-4 text-kisan-primary" />
+            <ShoppingBag className="w-3.5 h-3.5 text-kisan-primary" />
           </div>
-          <p className="text-xl font-black text-kisan-dark">{stats?.active_products || 0}</p>
+          <p className="text-lg font-black text-kisan-dark">{stats?.active_products || 0}</p>
           <span className="text-[10px] text-kisan-primary font-bold">Of {stats?.total_products || 0} Listed</span>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-kisan-border shadow-card">
-          <div className="flex items-center justify-between text-kisan-muted text-xs font-semibold mb-1">
+        <div className="bg-white p-3 rounded-2xl border border-kisan-border shadow-card">
+          <div className="flex items-center justify-between text-kisan-muted text-[11px] font-semibold mb-0.5">
             <span>Farmers</span>
-            <Users className="w-4 h-4 text-emerald-600" />
+            <Users className="w-3.5 h-3.5 text-emerald-600" />
           </div>
-          <p className="text-xl font-black text-kisan-dark">{stats?.total_farmers || 0}</p>
+          <p className="text-lg font-black text-kisan-dark">{stats?.total_farmers || 0}</p>
           <span className="text-[10px] text-emerald-700 font-bold">Producers</span>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-kisan-border shadow-card">
-          <div className="flex items-center justify-between text-kisan-muted text-xs font-semibold mb-1">
+        <div className="bg-white p-3 rounded-2xl border border-kisan-border shadow-card">
+          <div className="flex items-center justify-between text-kisan-muted text-[11px] font-semibold mb-0.5">
             <span>Buyers</span>
-            <Users className="w-4 h-4 text-blue-600" />
+            <Users className="w-3.5 h-3.5 text-blue-600" />
           </div>
-          <p className="text-xl font-black text-kisan-dark">{stats?.total_buyers || 0}</p>
+          <p className="text-lg font-black text-kisan-dark">{stats?.total_buyers || 0}</p>
           <span className="text-[10px] text-blue-700 font-bold">Consumers</span>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-kisan-border shadow-card">
-          <div className="flex items-center justify-between text-kisan-muted text-xs font-semibold mb-1">
+        <div className="bg-white p-3 rounded-2xl border border-kisan-border shadow-card">
+          <div className="flex items-center justify-between text-kisan-muted text-[11px] font-semibold mb-0.5">
             <span>Categories</span>
-            <Layers className="w-4 h-4 text-purple-600" />
+            <Layers className="w-3.5 h-3.5 text-purple-600" />
           </div>
-          <p className="text-xl font-black text-kisan-dark">{stats?.total_categories || 0}</p>
+          <p className="text-lg font-black text-kisan-dark">{stats?.total_categories || 0}</p>
           <span className="text-[10px] text-purple-700 font-bold">Active Sections</span>
         </div>
       </div>
