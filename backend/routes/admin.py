@@ -681,6 +681,25 @@ def purge_demo_data():
         db.session.rollback()
         return jsonify({'error': f'Failed to purge demo data: {str(e)}'}), 500
 
+
+@admin_bp.route('/system/reset-and-seed-fresh', methods=['POST'])
+@jwt_required()
+def reset_and_seed_fresh_endpoint():
+    admin = require_admin()
+    if not admin:
+        return jsonify({'error': 'Unauthorized. Admin privilege required.'}), 403
+
+    try:
+        from backend.seed_fresh_jntu import reset_and_seed_fresh
+        summary = reset_and_seed_fresh()
+        return jsonify({
+            'message': 'Database reset and seeded with fresh JNTU-area data & harvest dates.',
+            'summary': summary,
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to reset and seed fresh data: {str(e)}'}), 500
+
 @admin_bp.route('/system/broadcast', methods=['POST'])
 @jwt_required()
 def broadcast_notification():

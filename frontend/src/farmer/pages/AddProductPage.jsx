@@ -167,7 +167,11 @@ const AddProductPage = () => {
         harvest_date: formData.harvest_date || null,
         image_url: formData.image_url
       });
-      navigate('/farmer/products');
+      if (formData.selling_mode === 'apartments_only' || formData.selling_mode === 'both') {
+        navigate('/farmer/communities');
+      } else {
+        navigate('/farmer/products');
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to list product');
     } finally {

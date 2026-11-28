@@ -200,6 +200,24 @@ const CheckoutPage = () => {
     );
   }
 
+  if ((!cart?.items || cart.items.length === 0) && !razorpayModal && !placing) {
+    return (
+      <div className="relative max-w-xl mx-auto px-4 py-16 text-center space-y-4">
+        <PageBackground image={bg8} />
+        <h2 className="text-xl font-bold text-kisan-dark">Your cart is empty</h2>
+        <p className="text-xs text-kisan-muted">Add fresh produce to your cart before proceeding to checkout.</p>
+        <button
+          type="button"
+          onClick={() => navigate('/buyer')}
+          className="inline-flex items-center space-x-2 bg-kisan-primary text-white text-xs font-bold px-5 py-3 rounded-2xl shadow-sm hover:bg-kisan-dark"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Explore Farm Marketplace</span>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="relative max-w-3xl mx-auto px-4 py-6 sm:py-8 space-y-6 pb-24 md:pb-8">
       <PageBackground image={bg8} />
@@ -225,6 +243,7 @@ const CheckoutPage = () => {
             <span>{t('deliveryAddress')}</span>
           </h2>
           <button
+            type="button"
             onClick={() => setShowAddAddr(!showAddAddr)}
             className="text-xs font-bold text-kisan-primary hover:underline flex items-center space-x-1"
           >
@@ -457,11 +476,12 @@ const CheckoutPage = () => {
 
       {/* Place Order CTA */}
       <button
+        type="button"
         onClick={handlePlaceOrder}
-        disabled={placing}
+        disabled={placing || Boolean(razorpayModal)}
         className="w-full bg-kisan-primary text-white py-4 rounded-2xl font-bold text-base shadow-card hover:bg-kisan-dark transition-all disabled:opacity-50"
       >
-        {placing ? 'Confirming Harvest Order...' : `${paymentMethod === 'RAZORPAY' ? 'Pay with Razorpay' : t('placeOrder')} • ₹${cart.total_amount.toFixed(2)}`}
+        {placing ? 'Confirming Harvest Order...' : `${paymentMethod === 'RAZORPAY' ? 'Pay with Razorpay' : t('placeOrder')} • ₹${Number(cart.total_amount || 0).toFixed(2)}`}
       </button>
 
       {/* Razorpay Sandbox Checkout Modal (used when live merchant keys are not set) */}
