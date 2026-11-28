@@ -16,18 +16,21 @@ const OrderTimeline = ({ currentStatus }) => {
 
   const steps = [
     { key: 'Pending', label: t('statusPending'), icon: Clock },
-    { key: 'Accepted', label: t('statusAccepted'), icon: CheckCircle2 },
+    { key: 'Confirmed', label: 'Confirmed', icon: CheckCircle2 },
     { key: 'Preparing', label: t('statusPreparing'), icon: Package },
-    { key: 'Ready for Dispatch', label: t('statusReady'), icon: Truck },
-    { key: 'Completed', label: t('statusCompleted'), icon: Check },
+    { key: 'Packed', label: 'Packed', icon: Truck },
+    { key: 'Delivered', label: 'Delivered', icon: Check },
   ];
 
   const getStepIndex = (status) => {
     switch (status) {
       case 'Pending': return 0;
+      case 'Confirmed':
       case 'Accepted': return 1;
       case 'Preparing': return 2;
+      case 'Packed':
       case 'Ready for Dispatch': return 3;
+      case 'Delivered':
       case 'Completed': return 4;
       default: return 0;
     }

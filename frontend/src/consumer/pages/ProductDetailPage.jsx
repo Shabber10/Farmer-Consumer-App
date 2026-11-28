@@ -9,6 +9,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { BackButton } from '../../shared';
 import api, { getImageUrl } from '../../services/api';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 import { getLocalizedProductName, getLocalizedCategoryName, getLocalizedUnit } from '../../utils/productLocalization';
 
 const StarPicker = ({ value, onChange, size = 'w-6 h-6' }) => (
@@ -57,8 +58,9 @@ const ProductDetailPage = () => {
     comment: ''
   });
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [togglingHelpfulId, setTogglingHelpfulId] = useState(null);
 
-  const fetchProductAndReviews = useCallback(async () => {
+  const fetchProductAndReviews = useCallback(async (silent = false) => {
     try {
       const [prodRes, revRes] = await Promise.all([
         api.get(`/api/products/${id}`),
@@ -67,7 +69,7 @@ const ProductDetailPage = () => {
       setProduct(prodRes.data.product);
       setSummary(revRes.data.summary);
       setReviews(revRes.data.reviews || []);
-      if (revRes.data.my_review) {
+      if (!silent && revRes.data.my_review) {
         setReviewForm({
           rating: revRes.data.my_review.rating,
           farmer_rating: revRes.data.my_review.farmer_rating,
@@ -78,13 +80,15 @@ const ProductDetailPage = () => {
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [id, sortBy]);
 
   useEffect(() => {
-    fetchProductAndReviews();
+    fetchProductAndReviews(false);
   }, [fetchProductAndReviews]);
+
+  useAutoRefresh(fetchProductAndReviews, 12000, !showReviewForm);
 
   useEffect(() => {
     if (location.hash === '#reviews') {
@@ -133,12 +137,21 @@ const ProductDetailPage = () => {
   };
 
   const handleHelpful = async (reviewId) => {
+    if (togglingHelpfulId === reviewId) return;
     try {
+      setTogglingHelpfulId(reviewId);
       const res = await api.post(`/api/reviews/${reviewId}/helpful`);
       setReviews(prev =>
-        prev.map(r => (r.id === reviewId ? { ...r, helpful_count: res.data.helpful_count } : r))
+        prev.map(r => (r.id === reviewId ? {
+          ...r,
+          helpful_count: res.data.helpful_count,
+          helpful_by_me: Boolean(res.data.helpful_by_me)
+        } : r))
       );
     } catch (err) {}
+    finally {
+      setTogglingHelpfulId(null);
+    }
   };
 
   const handleDeleteReview = async (reviewId) => {
@@ -530,10 +543,16 @@ const ProductDetailPage = () => {
                         <button
                           type="button"
                           onClick={() => handleHelpful(rev.id)}
-                          className="inline-flex items-center space-x-1 text-[10px] font-bold text-gray-500 hover:text-emerald-700 bg-gray-100 hover:bg-emerald-50 px-2 py-1 rounded-lg transition-colors"
+                          disabled={togglingHelpfulId === rev.id}
+                          title={rev.helpful_by_me ? 'Click to remove your helpful vote' : 'Mark review as helpful'}
+                          className={`inline-flex items-center space-x-1 text-[10px] font-bold px-2.5 py-1 rounded-lg transition-colors border ${
+                            rev.helpful_by_me
+                              ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                              : 'bg-gray-100 text-gray-500 border-transparent hover:text-emerald-700 hover:bg-emerald-50'
+                          }`}
                         >
-                          <ThumbsUp className="w-3 h-3" />
-                          <span>Helpful ({rev.helpful_count || 0})</span>
+                          <ThumbsUp className={`w-3 h-3 ${rev.helpful_by_me ? 'fill-emerald-700 text-emerald-700' : ''}`} />
+                          <span>{rev.helpful_by_me ? 'Helpful ✓' : 'Helpful'} ({rev.helpful_count || 0})</span>
                         </button>
                       )}
                       {user?.id === rev.buyer_id && (

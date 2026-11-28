@@ -2,7 +2,7 @@ from datetime import datetime
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt, verify_jwt_in_request
 from backend.extensions import db
-from backend.models import ProductReview, OrderFeedback, Product, FarmerProfile, Order, OrderItem, Notification
+from backend.models import ProductReview, OrderFeedback, Product, FarmerProfile, Order, OrderItem, Notification, ReviewHelpfulVote
 
 reviews_bp = Blueprint('reviews', __name__)
 
@@ -65,19 +65,30 @@ def get_product_reviews(product_id):
     summary['farmer_total_reviews'] = farmer_count
 
     my_review = None
+    voted_ids = set()
     try:
         verify_jwt_in_request(optional=True)
         uid = get_jwt_identity()
         if uid:
-            existing = ProductReview.query.filter_by(product_id=product_id, buyer_id=int(uid)).first()
+            uid_int = int(uid)
+            existing = ProductReview.query.filter_by(product_id=product_id, buyer_id=uid_int).first()
             if existing:
                 my_review = existing.to_dict()
+            review_ids = [r.id for r in reviews]
+            if review_ids:
+                voted_ids = {
+                    v.review_id
+                    for v in ReviewHelpfulVote.query.filter(
+                        ReviewHelpfulVote.user_id == uid_int,
+                        ReviewHelpfulVote.review_id.in_(review_ids)
+                    ).all()
+                }
     except Exception:
         pass
 
     return jsonify({
         'summary': summary,
-        'reviews': [r.to_dict() for r in reviews],
+        'reviews': [r.to_dict(helpful_by_me=(r.id in voted_ids)) for r in reviews],
         'my_review': my_review
     }), 200
 
@@ -164,13 +175,23 @@ def submit_product_review(product_id):
 @reviews_bp.route('/<int:review_id>/helpful', methods=['POST'])
 @jwt_required()
 def mark_review_helpful(review_id):
+    user_id = int(get_jwt_identity())
     review = ProductReview.query.get(review_id)
     if not review:
         return jsonify({'error': 'Review not found'}), 404
 
-    review.helpful_count = (review.helpful_count or 0) + 1
+    existing_vote = ReviewHelpfulVote.query.filter_by(review_id=review_id, user_id=user_id).first()
+    if existing_vote:
+        db.session.delete(existing_vote)
+        review.helpful_count = max(0, (review.helpful_count or 0) - 1)
+        helpful_by_me = False
+    else:
+        db.session.add(ReviewHelpfulVote(review_id=review_id, user_id=user_id))
+        review.helpful_count = (review.helpful_count or 0) + 1
+        helpful_by_me = True
+
     db.session.commit()
-    return jsonify({'helpful_count': review.helpful_count}), 200
+    return jsonify({'helpful_count': review.helpful_count, 'helpful_by_me': helpful_by_me}), 200
 
 
 @reviews_bp.route('/<int:review_id>/reply', methods=['POST'])
@@ -247,7 +268,10 @@ def get_pending_delivery_reviews():
         return jsonify({'pending_orders': []}), 200
 
     completed_orders = (
-        Order.query.filter_by(buyer_id=user_id, order_status='Completed')
+        Order.query.filter(
+            Order.buyer_id == user_id,
+            Order.order_status.in_(['Completed', 'Delivered'])
+        )
         .order_by(Order.updated_at.desc())
         .all()
     )
@@ -272,7 +296,7 @@ def submit_order_delivery_feedback(order_id):
         return jsonify({'error': 'Order not found'}), 404
     if order.buyer_id != user_id:
         return jsonify({'error': 'Unauthorized order access'}), 403
-    if order.order_status != 'Completed':
+    if order.order_status not in ('Completed', 'Delivered'):
         return jsonify({'error': 'Order can only be rated after delivery is completed'}), 400
 
     data = request.get_json() or {}

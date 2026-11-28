@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   ShieldCheck, Users, ShoppingBag, Package, TrendingUp, 
   CheckCircle2, XCircle, Search, Filter, RefreshCw, 
@@ -10,6 +10,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { PageBackground, PasswordInput } from '../../shared';
 import bg9 from '../../assets/images/bg9_hd.jpg';
 import api, { getBaseUrl, getImageUrl } from '../../services/api';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
@@ -128,8 +129,8 @@ const AdminDashboard = () => {
     } catch (e) { console.error(e); }
   };
 
-  const loadAll = async () => {
-    setLoading(true);
+  const loadAll = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     await Promise.all([
       fetchOverview(),
       fetchUsers(),
@@ -141,8 +142,8 @@ const AdminDashboard = () => {
       fetchPayments(),
       fetchReviews()
     ]);
-    setLoading(false);
-  };
+    if (!silent) setLoading(false);
+  }, []);
 
   const handleToggleUserVerify = async (userId) => {
     try {
@@ -176,8 +177,10 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
-    loadAll();
-  }, []);
+    loadAll(false);
+  }, [loadAll]);
+
+  useAutoRefresh(loadAll, 10000, !showAddUserModal && !showEditUserModal && !showAddProductModal && !showAddCategoryModal);
 
   // ==========================================
   // USER ACTIONS

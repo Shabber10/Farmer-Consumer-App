@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Star, MessageSquare, CheckCircle2, Send, ThumbsUp, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 const FarmerReviews = () => {
   const navigate = useNavigate();
@@ -12,22 +13,24 @@ const FarmerReviews = () => {
   const [replyText, setReplyText] = useState('');
   const [msg, setMsg] = useState('');
 
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await api.get('/api/reviews/farmer');
       setSummary(res.data.summary);
       setReviews(res.data.reviews || []);
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchReviews();
-  }, []);
+    fetchReviews(false);
+  }, [fetchReviews]);
+
+  useAutoRefresh(fetchReviews, 12000, !replyingId);
 
   const handleReplySubmit = async (e, reviewId) => {
     e.preventDefault();

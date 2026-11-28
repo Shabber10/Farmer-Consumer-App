@@ -353,6 +353,7 @@ class FarmerOrder(db.Model):
             'order_number': self.order.order_number if self.order else None,
             'order_date': self.created_at.isoformat() if self.created_at else None,
             'farmer_id': self.farmer_id,
+            'farm_name': self.farmer.farm_name if self.farmer else None,
             'subtotal': float(self.subtotal),
             'status': self.status,
             'delivery_otp': self.delivery_otp,
@@ -484,7 +485,7 @@ class ProductReview(db.Model):
     product = db.relationship('Product', backref=db.backref('reviews', lazy='dynamic', cascade='all, delete-orphan'))
     buyer = db.relationship('User')
 
-    def to_dict(self):
+    def to_dict(self, helpful_by_me=False):
         return {
             'id': self.id,
             'product_id': self.product_id,
@@ -499,10 +500,25 @@ class ProductReview(db.Model):
             'comment': self.comment,
             'is_verified_purchase': self.is_verified_purchase,
             'helpful_count': self.helpful_count or 0,
+            'helpful_by_me': bool(helpful_by_me),
             'farmer_reply': self.farmer_reply,
             'farmer_replied_at': self.farmer_replied_at.isoformat() if self.farmer_replied_at else None,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
+
+
+class ReviewHelpfulVote(db.Model):
+    """Tracks per-user helpful votes so each buyer can toggle a helpful vote once."""
+    __tablename__ = 'review_helpful_votes'
+
+    id = db.Column(db.Integer, primary_key=True)
+    review_id = db.Column(db.Integer, db.ForeignKey('product_reviews.id', ondelete='CASCADE'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('review_id', 'user_id', name='uq_review_helpful_user'),
+    )
 
 
 class OrderFeedback(db.Model):

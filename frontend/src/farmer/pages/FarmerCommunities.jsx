@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
@@ -6,6 +6,7 @@ import {
   List, Map as MapIcon, ShieldCheck, Phone, Sparkles, CheckCircle2, X
 } from 'lucide-react';
 import api from '../../services/api';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 import { PageBackground } from '../../shared';
 import bg7 from '../../assets/images/bg7_hd.jpg';
 
@@ -51,9 +52,9 @@ const FarmerCommunities = () => {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
 
-  const loadAll = async () => {
+  const loadAll = useCallback(async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const [commRes, demandRes, campRes, prodRes] = await Promise.all([
         api.get(`/api/campaigns/farmer/communities?sort_by=${sortBy}`),
         api.get('/api/campaigns/farmer/demand-requests'),
@@ -84,13 +85,15 @@ const FarmerCommunities = () => {
     } catch (err) {
       console.error('Failed to load farmer community hub:', err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  };
+  }, [sortBy, campaignForm.product_id]);
 
   useEffect(() => {
-    loadAll();
+    loadAll(false);
   }, [sortBy]);
+
+  useAutoRefresh(loadAll, 10000, !showCampaignModal && !ratingTarget);
 
   // Render Leaflet Map when viewMode === 'map'
   useEffect(() => {

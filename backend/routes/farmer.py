@@ -125,18 +125,26 @@ def update_order_status(order_id):
             return jsonify({'error': 'Invalid Delivery OTP. Please enter the 4-digit OTP shown on screen.'}), 400
 
     farmer_order.status = new_status
+    db.session.flush()
 
-    # Notify buyer of status update
+    # Notify buyer of status update & keep parent Order status synchronized
     parent_order = farmer_order.order
     if parent_order:
-        # Check if all sub-orders are completed/delivered
-        all_completed = all(fo.status in ('Completed', 'Delivered') for fo in parent_order.farmer_orders)
+        sub_orders = list(parent_order.farmer_orders)
+        all_completed = bool(sub_orders) and all(fo.status in ('Completed', 'Delivered') for fo in sub_orders)
+        all_cancelled = bool(sub_orders) and all(fo.status == 'Cancelled' for fo in sub_orders)
         if all_completed:
-            parent_order.order_status = 'Delivered' if new_status == 'Delivered' else 'Completed'
+            parent_order.order_status = 'Delivered' if any(fo.status == 'Delivered' for fo in sub_orders) else 'Completed'
             if parent_order.payment_method == 'COD':
                 parent_order.payment_status = 'Successful'
-        elif new_status == 'Cancelled' and all(fo.status == 'Cancelled' for fo in parent_order.farmer_orders):
+                for pay in parent_order.payments:
+                    pay.status = 'Successful'
+        elif all_cancelled:
             parent_order.order_status = 'Cancelled'
+        elif any(fo.status in ('Packed', 'Ready for Dispatch') for fo in sub_orders):
+            parent_order.order_status = 'Packed'
+        elif any(fo.status in ('Delivered', 'Completed') for fo in sub_orders):
+            parent_order.order_status = 'Packed'
         else:
             parent_order.order_status = new_status
 

@@ -32,10 +32,17 @@ const MobileHeader = ({ title, showBack = false }) => {
       }
     };
     fetchNotifs();
-    const timer = setInterval(fetchNotifs, 20000);
+    const timer = setInterval(fetchNotifs, 10000);
+    const onWake = () => {
+      if (document.visibilityState !== 'hidden') fetchNotifs();
+    };
+    window.addEventListener('focus', onWake);
+    document.addEventListener('visibilitychange', onWake);
     return () => {
       active = false;
       clearInterval(timer);
+      window.removeEventListener('focus', onWake);
+      document.removeEventListener('visibilitychange', onWake);
     };
   }, [isAuthenticated, role, location.pathname]);
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Search,
@@ -33,6 +33,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { PageBackground } from '../../shared';
 import bg6 from '../../assets/images/bg6_hd.jpg';
 import api from '../../services/api';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 import { getLocalizedCategoryName, getLocalizedQuickChips } from '../../utils/productLocalization';
 
 const CATEGORY_EMOJIS = {
@@ -54,7 +55,7 @@ const MarketplaceHome = () => {
   const [pendingRatingOrder, setPendingRatingOrder] = useState(null);
   const [showRatingModal, setShowRatingModal] = useState(false);
 
-  useEffect(() => {
+  const fetchPendingAndCommunity = useCallback(() => {
     if (!isAuthenticated) return;
     api.get('/api/reviews/pending-delivery')
       .then((res) => {
@@ -68,14 +69,6 @@ const MarketplaceHome = () => {
         }
       })
       .catch(() => {});
-  }, [isAuthenticated]);
-
-  // Real DB-backed community state (no default timer or dummy pool data)
-  const [myCommunity, setMyCommunity] = useState(null);
-  const [communityOrders, setCommunityOrders] = useState([]);
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
     api.get('/api/communities/my')
       .then((res) => {
         setMyCommunity(res.data.community || null);
@@ -84,6 +77,12 @@ const MarketplaceHome = () => {
       .catch(() => {});
   }, [isAuthenticated]);
 
+  useEffect(() => {
+    fetchPendingAndCommunity();
+  }, [fetchPendingAndCommunity]);
+
+  const [myCommunity, setMyCommunity] = useState(null);
+  const [communityOrders, setCommunityOrders] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [products, setProducts] = useState([]);
@@ -110,7 +109,7 @@ const MarketplaceHome = () => {
 
   const buyerGreeting = user?.full_name ? user.full_name.split(' ')[0] : 'Neighbor';
 
-  useEffect(() => {
+  const fetchCategories = useCallback(() => {
     api.get('/api/categories')
       .then(res => {
         setCategories(res.data.categories || []);
@@ -120,9 +119,13 @@ const MarketplaceHome = () => {
       });
   }, []);
 
-  const fetchProducts = async () => {
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  const fetchProducts = useCallback(async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const params = new URLSearchParams();
       if (selectedCategory) params.append('category_id', selectedCategory);
       if (search) params.append('search', search);
@@ -137,13 +140,21 @@ const MarketplaceHome = () => {
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  };
+  }, [selectedCategory, search, sortBy, onlyOrganic, minPrice, maxPrice, locationFilter]);
 
   useEffect(() => {
-    fetchProducts();
+    fetchProducts(false);
   }, [selectedCategory, sortBy, onlyOrganic]);
+
+  const refreshAllHome = useCallback(() => {
+    fetchProducts(true);
+    fetchCategories();
+    fetchPendingAndCommunity();
+  }, [fetchProducts, fetchCategories, fetchPendingAndCommunity]);
+
+  useAutoRefresh(refreshAllHome, 10000, !showFilterModal && !showLocationModal && !showRatingModal);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();

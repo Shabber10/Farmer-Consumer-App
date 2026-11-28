@@ -1,19 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { IndianRupee, TrendingUp, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { BackButton } from '../../shared';
 import api from '../../services/api';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 const FarmerEarnings = () => {
   const { t } = useLanguage();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchEarnings = useCallback((silent = false) => {
+    if (!silent) setLoading(true);
     api.get('/api/farmer/earnings').then(res => {
       setData(res.data);
-    }).finally(() => setLoading(false));
+    }).finally(() => {
+      if (!silent) setLoading(false);
+    });
   }, []);
+
+  useEffect(() => {
+    fetchEarnings(false);
+  }, [fetchEarnings]);
+
+  useAutoRefresh(fetchEarnings, 12000);
 
   if (loading) {
     return (

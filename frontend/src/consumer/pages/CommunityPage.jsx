@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Users, Building2, Copy, Check, Share2, Clock, Star,
   Plus, MapPin, ShoppingBag, Sparkles, ArrowRight, Banknote, CreditCard, CheckCircle2
 } from 'lucide-react';
 import api, { getImageUrl } from '../../services/api';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 import { useAuth } from '../../contexts/AuthContext';
 import { BackButton, PageBackground } from '../../shared';
 import bg6 from '../../assets/images/bg6_hd.jpg';
@@ -32,21 +33,23 @@ const CommunityPage = () => {
   const [toast, setToast] = useState('');
   const [, setTick] = useState(0);
 
-  const fetchMyCommunity = async () => {
+  const fetchMyCommunity = useCallback(async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await api.get('/api/communities/my');
       setData(res.data);
     } catch (err) {
       console.error('Failed to load community:', err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchMyCommunity();
-  }, []);
+    fetchMyCommunity(false);
+  }, [fetchMyCommunity]);
+
+  useAutoRefresh(fetchMyCommunity, 8000, !showJoinModal);
 
   // Tick every second ONLY when at least one active campaign timer exists
   useEffect(() => {

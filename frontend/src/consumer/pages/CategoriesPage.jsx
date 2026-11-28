@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Layers } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { BackButton, PageBackground } from '../../shared';
 import bg6 from '../../assets/images/bg6_hd.jpg';
 import api, { getImageUrl } from '../../services/api';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 import { getLocalizedCategoryName } from '../../utils/productLocalization';
 
 const CategoriesPage = () => {
@@ -13,11 +14,20 @@ const CategoriesPage = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchCategories = useCallback((silent = false) => {
+    if (!silent) setLoading(true);
     api.get('/api/categories').then(res => {
       setCategories(res.data.categories || []);
-    }).finally(() => setLoading(false));
+    }).finally(() => {
+      if (!silent) setLoading(false);
+    });
   }, []);
+
+  useEffect(() => {
+    fetchCategories(false);
+  }, [fetchCategories]);
+
+  useAutoRefresh(fetchCategories, 15000);
 
   return (
     <div className="relative max-w-6xl mx-auto px-4 py-6 sm:py-8 space-y-6 pb-24 md:pb-8">

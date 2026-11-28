@@ -4,7 +4,7 @@ import sys
 # Ensure backend package resolves
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from flask import Flask, send_from_directory, jsonify
+from flask import Flask, send_from_directory, jsonify, request
 from sqlalchemy import inspect, text
 from backend.config import Config
 from backend.extensions import db, jwt, cors
@@ -32,6 +32,14 @@ def create_app(config_class=Config):
     db.init_app(app)
     jwt.init_app(app)
     cors.init_app(app, resources={r"/api/*": {"origins": "*"}})
+
+    @app.after_request
+    def disable_api_cache(response):
+        if request.path.startswith('/api/'):
+            response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+        return response
 
     # Ensure uploads directory exists
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)

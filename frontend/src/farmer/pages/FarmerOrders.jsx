@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ShoppingBag, MapPin, Phone, Search, SlidersHorizontal, X, Loader2, Check, Navigation, KeyRound, PackageCheck } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -6,6 +6,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { PageBackground } from '../../shared';
 import bg7 from '../../assets/images/bg7_hd.jpg';
 import api from '../../services/api';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 const ORDER_STATUSES = ['All', 'Confirmed', 'Packed', 'Delivered', 'Completed', 'Cancelled'];
 
@@ -66,11 +67,13 @@ const FarmerOrders = () => {
   const [pullDistance, setPullDistance] = useState(0);
   const touchStartYRef = useRef(null);
 
-  const fetchOrders = async (isPullRefresh = false) => {
+  const fetchOrders = useCallback(async (mode = false) => {
+    const isSilent = mode === true;
+    const isPull = mode === 'pull';
     try {
-      if (isPullRefresh) {
+      if (isPull) {
         setRefreshing(true);
-      } else {
+      } else if (!isSilent) {
         setLoading(true);
       }
       const res = await api.get('/api/farmer/orders');
@@ -78,15 +81,19 @@ const FarmerOrders = () => {
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
-      setRefreshing(false);
-      setPullDistance(0);
+      if (!isSilent) {
+        setLoading(false);
+        setRefreshing(false);
+        setPullDistance(0);
+      }
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    fetchOrders(false);
+  }, [fetchOrders]);
+
+  useAutoRefresh(fetchOrders, 8000, !updatingId);
 
   const handleTouchStart = (e) => {
     if (window.scrollY <= 2) {
@@ -106,7 +113,7 @@ const FarmerOrders = () => {
 
   const handleTouchEnd = () => {
     if (pullDistance >= 48 && !refreshing) {
-      fetchOrders(true);
+      fetchOrders('pull');
     } else {
       setPullDistance(0);
     }

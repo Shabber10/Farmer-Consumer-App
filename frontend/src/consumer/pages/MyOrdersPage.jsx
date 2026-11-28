@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, Star, CheckCircle2, ChevronDown } from 'lucide-react';
+import { ShoppingBag, Star, CheckCircle2, ChevronDown, KeyRound, Truck } from 'lucide-react';
 import { OrderTimeline } from '../../shared';
 import DeliveryRatingModal from '../components/DeliveryRatingModal';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { BackButton } from '../../shared';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 import api from '../../services/api';
 
 const MyOrdersPage = () => {
@@ -19,21 +20,23 @@ const MyOrdersPage = () => {
     setExpandedOrderIds((prev) => ({ ...prev, [orderId]: !prev[orderId] }));
   };
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await api.get('/api/orders');
       setOrders(res.data.orders || []);
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [fetchOrders]);
+
+  useAutoRefresh(fetchOrders, 8000, !ratingOrder);
 
   const handleCancelOrder = async (orderId) => {
     if (!window.confirm('Are you sure you want to cancel this order?')) return;
@@ -99,8 +102,9 @@ const MyOrdersPage = () => {
                     <div className="text-right">
                       <span className="text-base font-black text-kisan-primary block">₹{order.total_amount?.toFixed(2)}</span>
                       <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full inline-block ${
-                        order.order_status === 'Completed' ? 'bg-emerald-100 text-emerald-800' :
+                        ['Completed', 'Delivered'].includes(order.order_status) ? 'bg-emerald-100 text-emerald-800' :
                         order.order_status === 'Cancelled' ? 'bg-red-100 text-red-800' :
+                        order.order_status === 'Packed' ? 'bg-blue-100 text-blue-800' :
                         'bg-amber-100 text-amber-800'
                       }`}>
                         {order.order_status}
@@ -141,13 +145,50 @@ const MyOrdersPage = () => {
                       ))}
                     </div>
 
-                    {/* Footer with Cancellation (if Pending) or Delivery Rating (if Completed) */}
+                    {/* Per-Farmer Shipment Status & Delivery OTP */}
+                    {order.farmer_orders?.length > 0 && (
+                      <div className="space-y-2">
+                        {order.farmer_orders.map((fo) => {
+                          const isDelivered = ['Delivered', 'Completed'].includes(fo.status);
+                          const isCancelled = fo.status === 'Cancelled';
+                          return (
+                            <div
+                              key={fo.id}
+                              className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 text-[11px]"
+                            >
+                              <div className="flex items-center space-x-2 min-w-0">
+                                <Truck className="w-3.5 h-3.5 text-kisan-primary flex-shrink-0" />
+                                <span className="font-bold text-kisan-dark truncate kd-noun">
+                                  {fo.farm_name || 'Partner Farm'}
+                                </span>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                  isDelivered ? 'bg-emerald-100 text-emerald-800' :
+                                  isCancelled ? 'bg-red-100 text-red-800' :
+                                  fo.status === 'Packed' ? 'bg-blue-100 text-blue-800' :
+                                  'bg-amber-100 text-amber-800'
+                                }`}>
+                                  {fo.status}
+                                </span>
+                              </div>
+                              {!isDelivered && !isCancelled && fo.delivery_otp && (
+                                <span className="inline-flex items-center space-x-1 bg-amber-50 text-amber-900 border border-amber-200 px-2 py-0.5 rounded-lg font-mono font-bold">
+                                  <KeyRound className="w-3 h-3 text-amber-700" />
+                                  <span>OTP: {fo.delivery_otp}</span>
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Footer with Cancellation (if Pending/Confirmed) or Delivery Rating (if Delivered/Completed) */}
                     <div className="flex flex-wrap items-center justify-between pt-2 border-t border-gray-100 text-xs gap-2">
                       <span className="text-kisan-muted">
                         Delivery to: <b className="text-kisan-text">{order.address?.street}, {order.address?.pincode}</b>
                       </span>
 
-                      {order.order_status === 'Pending' && (
+                      {['Pending', 'Confirmed'].includes(order.order_status) && (
                         <button
                           onClick={() => handleCancelOrder(order.id)}
                           disabled={cancellingId === order.id}
@@ -157,7 +198,7 @@ const MyOrdersPage = () => {
                         </button>
                       )}
 
-                      {order.order_status === 'Completed' && (
+                      {['Completed', 'Delivered'].includes(order.order_status) && (
                         order.is_rated ? (
                           <span className="inline-flex items-center space-x-1 bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-xl font-bold text-[11px]">
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />

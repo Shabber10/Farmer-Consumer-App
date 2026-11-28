@@ -2,7 +2,7 @@ import os
 import re
 import requests as http_requests
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, date
 from werkzeug.utils import secure_filename
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt, verify_jwt_in_request
@@ -201,7 +201,14 @@ def create_product():
         if Decimal(str(available_quantity)) <= Decimal(str(min_bulk_quantity)):
             return jsonify({'error': 'Available quantity must be greater than minimum bulk quantity'}), 400
 
-        harvest_date = datetime.strptime(harvest_date_str, '%Y-%m-%d').date() if harvest_date_str else None
+        harvest_date = None
+        if harvest_date_str:
+            try:
+                harvest_date = datetime.strptime(str(harvest_date_str).strip()[:10], '%Y-%m-%d').date()
+            except ValueError:
+                return jsonify({'error': 'Invalid harvest date format. Use YYYY-MM-DD.'}), 400
+            if harvest_date > date.today():
+                return jsonify({'error': 'Harvest date cannot be in the future. Please select today or a past date.'}), 400
         product = Product(
             farmer_id=farmer.id,
             category_id=category_id,
@@ -285,11 +292,17 @@ def update_product(product_id):
         product.is_available = bool(data['is_available'])
     if 'selling_mode' in data and data['selling_mode'] in ('both', 'apartments_only', 'individual_only'):
         product.selling_mode = data['selling_mode']
-    if 'harvest_date' in data and data['harvest_date']:
-        try:
-            product.harvest_date = datetime.strptime(data['harvest_date'], '%Y-%m-%d').date()
-        except Exception:
-            pass
+    if 'harvest_date' in data:
+        if data['harvest_date']:
+            try:
+                parsed_hd = datetime.strptime(str(data['harvest_date']).strip()[:10], '%Y-%m-%d').date()
+            except ValueError:
+                return jsonify({'error': 'Invalid harvest date format. Use YYYY-MM-DD.'}), 400
+            if parsed_hd > date.today():
+                return jsonify({'error': 'Harvest date cannot be in the future. Please select today or a past date.'}), 400
+            product.harvest_date = parsed_hd
+        else:
+            product.harvest_date = None
 
     if product.bulk_price is not None and product.price is not None and product.bulk_price >= product.price:
         return jsonify({'error': 'Bulk price must be lower than individual/solo price'}), 400

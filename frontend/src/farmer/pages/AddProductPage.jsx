@@ -11,6 +11,7 @@ const AddProductPage = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
 
+  const todayStr = new Date().toLocaleDateString('en-CA');
   const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
@@ -23,7 +24,7 @@ const AddProductPage = () => {
     delivery_price_per_km: '',
     max_delivery_km: '15',
     selling_mode: 'both',
-    harvest_date: new Date().toISOString().split('T')[0],
+    harvest_date: todayStr,
     image_url: ''
   });
 
@@ -133,6 +134,11 @@ const AddProductPage = () => {
     const deliveryPerKm = parseFloat(formData.delivery_price_per_km);
     if (isNaN(deliveryPerKm) || deliveryPerKm < 0) {
       setError('Please enter a valid delivery price per km');
+      return;
+    }
+
+    if (formData.harvest_date && formData.harvest_date > todayStr) {
+      setError('Harvest date cannot be in the future. Please select today or a past date.');
       return;
     }
 
@@ -302,11 +308,20 @@ const AddProductPage = () => {
 
         {/* Harvest Date */}
         <div>
-          <label className="block font-bold text-kisan-text mb-1">Harvest Date</label>
+          <label className="block font-bold text-kisan-text mb-1">Harvest Date (Today or Past Only)</label>
           <input
             type="date"
+            max={todayStr}
             value={formData.harvest_date}
-            onChange={(e) => setFormData({ ...formData, harvest_date: e.target.value })}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val && val > todayStr) {
+                setError('Harvest date cannot be in the future. Please select today or a past date.');
+                return;
+              }
+              setError('');
+              setFormData({ ...formData, harvest_date: val });
+            }}
             className="w-full px-3.5 py-2.5 bg-gray-50 border border-kisan-border rounded-xl focus:outline-none focus:border-kisan-primary text-xs font-bold"
           />
         </div>

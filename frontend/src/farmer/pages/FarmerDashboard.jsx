@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { IndianRupee, ShoppingBag, Layers, Clock, Plus, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -6,6 +6,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { PageBackground } from '../../shared';
 import bg7 from '../../assets/images/bg7_hd.jpg';
 import api from '../../services/api';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 const FarmerDashboard = () => {
   const { user } = useAuth();
@@ -13,19 +14,23 @@ const FarmerDashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        const res = await api.get('/api/farmer/dashboard');
-        setData(res.data);
-      } catch (err) {
-        console.error('Failed to load farmer dashboard:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchDashboard();
+  const fetchDashboard = useCallback(async (silent = false) => {
+    try {
+      if (!silent) setLoading(true);
+      const res = await api.get('/api/farmer/dashboard');
+      setData(res.data);
+    } catch (err) {
+      console.error('Failed to load farmer dashboard:', err);
+    } finally {
+      if (!silent) setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchDashboard(false);
+  }, [fetchDashboard]);
+
+  useAutoRefresh(fetchDashboard, 10000);
 
   if (loading) {
     return (

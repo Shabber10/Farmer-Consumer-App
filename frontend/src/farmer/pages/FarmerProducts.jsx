@@ -1,35 +1,39 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Trash2, Edit3, MapPin, AlertCircle, Users, Truck, Sprout } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import api, { getImageUrl } from '../../services/api';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 import { getLocalizedProductName, getLocalizedCategoryName, getLocalizedUnit } from '../../utils/productLocalization';
 
 const FALLBACK_IMG = '';
 
 const FarmerProducts = () => {
   const { language, t } = useLanguage();
+  const todayStr = new Date().toLocaleDateString('en-CA');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [msg, setMsg] = useState('');
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await api.get('/api/farmer/products');
       setProducts(res.data.products || []);
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchProducts();
-  }, []);
+    fetchProducts(false);
+  }, [fetchProducts]);
+
+  useAutoRefresh(fetchProducts, 10000, !editingProduct && !deleteConfirmId);
 
   const handleDelete = async (id) => {
     try {
@@ -60,6 +64,10 @@ const FarmerProducts = () => {
     }
     if (isNaN(availQty) || isNaN(minBulkQty) || availQty <= minBulkQty) {
       alert('Available quantity must be greater than the minimum bulk quantity.');
+      return;
+    }
+    if (editingProduct.harvest_date && String(editingProduct.harvest_date).slice(0, 10) > todayStr) {
+      alert('Harvest date cannot be in the future. Please select today or a past date.');
       return;
     }
     try {
@@ -364,11 +372,19 @@ const FarmerProducts = () => {
               </div>
 
               <div>
-                <label className="block font-bold mb-1">Harvest Date</label>
+                <label className="block font-bold mb-1">Harvest Date (Today or Past Only)</label>
                 <input
                   type="date"
+                  max={todayStr}
                   value={editingProduct.harvest_date ? String(editingProduct.harvest_date).slice(0, 10) : ''}
-                  onChange={(e) => setEditingProduct({ ...editingProduct, harvest_date: e.target.value })}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val && val > todayStr) {
+                      alert('Harvest date cannot be in the future. Please select today or a past date.');
+                      return;
+                    }
+                    setEditingProduct({ ...editingProduct, harvest_date: val });
+                  }}
                   className="w-full px-3 py-2 border rounded-xl bg-white font-semibold"
                 />
               </div>
