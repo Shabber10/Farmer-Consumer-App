@@ -51,10 +51,16 @@ def overview():
     total_gmv = db.session.query(func.coalesce(func.sum(Order.total_amount), 0))\
         .filter(Order.payment_status.in_(['completed', 'paid', 'Successful', 'COD'])).scalar() or 0
 
-    statuses = ['placed', 'confirmed', 'packed', 'shipped', 'delivered', 'cancelled']
-    status_counts = {}
-    for st in statuses:
-        status_counts[st] = Order.query.filter_by(order_status=st).count()
+    all_status_rows = db.session.query(Order.order_status).all()
+    norm_statuses = [((s[0] or '').strip().lower()) for s in all_status_rows]
+    status_counts = {
+        'placed': sum(1 for s in norm_statuses if s in ('placed', 'pending')),
+        'confirmed': sum(1 for s in norm_statuses if s in ('confirmed', 'accepted')),
+        'packed': sum(1 for s in norm_statuses if s in ('packed', 'preparing')),
+        'shipped': sum(1 for s in norm_statuses if s in ('shipped', 'ready for dispatch')),
+        'delivered': sum(1 for s in norm_statuses if s in ('delivered', 'completed')),
+        'cancelled': sum(1 for s in norm_statuses if s == 'cancelled'),
+    }
 
     recent_orders = Order.query.order_by(Order.created_at.desc()).limit(8).all()
     recent_orders_list = [o.to_dict() for o in recent_orders]

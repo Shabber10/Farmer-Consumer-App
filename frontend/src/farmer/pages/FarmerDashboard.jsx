@@ -199,7 +199,7 @@ const FarmerDashboard = () => {
                       {order.order_number || `ORD-${order.id}`}
                     </span>
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      order.status === 'Completed' ? 'bg-emerald-100 text-emerald-800' :
+                      ['Completed', 'Delivered'].includes(order.status) ? 'bg-emerald-100 text-emerald-800' :
                       order.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
                       'bg-amber-100 text-amber-800'
                     }`}>

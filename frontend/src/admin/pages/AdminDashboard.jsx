@@ -558,11 +558,11 @@ const AdminDashboard = () => {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center space-x-2 border-b border-kisan-border pb-3 overflow-x-auto no-scrollbar">
+      <div className="flex items-center flex-nowrap lg:flex-wrap gap-2 border-b border-kisan-border pb-3 overflow-x-auto no-scrollbar">
         {[
           { id: 'overview', label: 'Overview', icon: TrendingUp },
           { id: 'users', label: `Users (${usersList.length})`, icon: Users },
-          { id: 'products', label: `Produce (${productsList.length})`, icon: ShoppingBag },
+          { id: 'products', label: `Products (${productsList.length})`, icon: ShoppingBag },
           { id: 'orders', label: `Orders (${ordersList.length})`, icon: Package },
           { id: 'communities', label: `Apartments (${communitiesList.length})`, icon: Building2 },
           { id: 'payments', label: `Payments (${paymentsList.length})`, icon: CreditCard },
@@ -577,7 +577,7 @@ const AdminDashboard = () => {
             <button
               key={tab.id}
               onClick={() => { setActiveTab(tab.id); setSearchTerm(''); }}
-              className={`flex items-center space-x-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap ${
+              className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${
                 isActive
                   ? 'bg-kisan-primary text-white shadow-md'
                   : 'bg-white text-kisan-muted hover:text-kisan-dark hover:bg-gray-100 border border-kisan-border'

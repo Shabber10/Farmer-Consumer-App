@@ -233,7 +233,7 @@ const MarketplaceHome = () => {
               }`}
             >
               <Users className={`w-3.5 h-3.5 ${myCommunity && communityOrders.length > 0 ? 'text-emerald-300' : 'text-kisan-primary'}`} />
-              <span className="max-w-[190px] sm:max-w-[260px] truncate">
+              <span className="max-w-[155px] sm:max-w-[260px] truncate">
                 {myCommunity ? (
                   <>
                     <span className="kd-noun">{myCommunity.name}</span> ({myCommunity.members_count})

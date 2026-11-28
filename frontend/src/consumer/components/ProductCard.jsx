@@ -202,7 +202,7 @@ const ProductCard = ({ product, onQuickAdd, shoppingMode = 'community' }) => {
               onClick={handleAdd}
               disabled={!product.is_available}
               className={`
-                flex items-center justify-center space-x-1 px-3 py-1.5 rounded-xl text-xs font-black transition-all shadow-xs flex-shrink-0 active:scale-95
+                flex items-center justify-center space-x-1 px-2 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-black transition-all shadow-xs flex-shrink-0 active:scale-95
                 ${!product.is_available 
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                   : 'bg-emerald-700 hover:bg-emerald-800 text-white'
