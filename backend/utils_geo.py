@@ -47,20 +47,11 @@ def hex_ring_distance(lat1, lng1, lat2, lng2, hex_size_m=1000.0):
 
 def is_visible_in_expanding_hex_ring(farmer_lat, farmer_lng, buyer_lat, buyer_lng, dispatch_started_at, max_km=20.0, now=None):
     """
-    Rapido-style expanding hex-ring geo-dispatch:
-    - 0-10 mins: Ring <= 1 (nearest hexes)
-    - Every +10 mins: expands +1 hex ring up to max_km
+    Visibility check within farmer's max delivery radius (sorted nearest-first in routes).
     """
     if None in (farmer_lat, farmer_lng, buyer_lat, buyer_lng):
         return True
     dist_m = haversine_meters(farmer_lat, farmer_lng, buyer_lat, buyer_lng)
     if dist_m is not None and dist_m > float(max_km or 20.0) * 1000.0:
         return False
-    if not dispatch_started_at:
-        return True
-    from datetime import datetime
-    curr = now or datetime.utcnow()
-    elapsed_mins = max(0.0, (curr - dispatch_started_at).total_seconds() / 60.0)
-    allowed_ring = 1 + int(elapsed_mins // 10.0)
-    ring = hex_ring_distance(farmer_lat, farmer_lng, buyer_lat, buyer_lng, hex_size_m=1000.0)
-    return ring <= allowed_ring
+    return True

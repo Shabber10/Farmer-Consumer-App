@@ -75,7 +75,7 @@ def get_products():
 
     if buyer_lat is not None and buyer_lng is not None and not farmer_id:
         now = datetime.utcnow()
-        products = [
+        nearby = [
             p for p in products
             if is_visible_in_expanding_hex_ring(
                 p.farmer.latitude if p.farmer else None,
@@ -87,6 +87,9 @@ def get_products():
                 now=now,
             )
         ]
+        # Fallback to all matching products if user's current pin is outside all farmers' delivery radii
+        if nearby:
+            products = nearby
 
     return jsonify({'products': [p.to_dict() for p in products]}), 200
 
