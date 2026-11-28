@@ -168,6 +168,11 @@ def create_product():
         if max_km_val <= 0 or max_km_val >= 20:
             return jsonify({'error': 'Delivery distance must be less than 20 km (1 - 19 km)'}), 400
 
+        if Decimal(str(bulk_price)) >= Decimal(str(price)):
+            return jsonify({'error': 'Bulk price must be lower than individual/solo price'}), 400
+        if Decimal(str(available_quantity)) <= Decimal(str(min_bulk_quantity)):
+            return jsonify({'error': 'Available quantity must be greater than minimum bulk quantity'}), 400
+
         harvest_date = datetime.strptime(harvest_date_str, '%Y-%m-%d').date() if harvest_date_str else None
         product = Product(
             farmer_id=farmer.id,
@@ -254,6 +259,11 @@ def update_product(product_id):
             product.harvest_date = datetime.strptime(data['harvest_date'], '%Y-%m-%d').date()
         except Exception:
             pass
+
+    if product.bulk_price is not None and product.price is not None and product.bulk_price >= product.price:
+        return jsonify({'error': 'Bulk price must be lower than individual/solo price'}), 400
+    if product.available_quantity is not None and product.min_bulk_quantity is not None and product.available_quantity <= product.min_bulk_quantity:
+        return jsonify({'error': 'Available quantity must be greater than minimum bulk quantity'}), 400
 
     product.sync_stock_flags()
     db.session.commit()

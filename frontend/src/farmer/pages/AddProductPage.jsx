@@ -23,6 +23,7 @@ const AddProductPage = () => {
     delivery_price_per_km: '',
     max_delivery_km: '15',
     selling_mode: 'both',
+    harvest_date: new Date().toISOString().split('T')[0],
     image_url: ''
   });
 
@@ -140,6 +141,19 @@ const AddProductPage = () => {
       const individualPrice = parseFloat(formData.price);
       const bulkPrice = parseFloat(formData.bulk_price);
       const minBulkQty = parseFloat(formData.min_bulk_quantity);
+      const availQty = parseFloat(formData.available_quantity);
+
+      if (isNaN(bulkPrice) || isNaN(individualPrice) || bulkPrice >= individualPrice) {
+        setError('Bulk price must be lower than the individual/solo price.');
+        setSubmitting(false);
+        return;
+      }
+
+      if (isNaN(availQty) || isNaN(minBulkQty) || availQty <= minBulkQty) {
+        setError('Available quantity must be greater than the minimum bulk quantity.');
+        setSubmitting(false);
+        return;
+      }
 
       await api.post('/api/products', {
         name: formData.name,
@@ -147,11 +161,12 @@ const AddProductPage = () => {
         price: individualPrice,
         bulk_price: bulkPrice,
         min_bulk_quantity: minBulkQty,
-        available_quantity: parseFloat(formData.available_quantity),
+        available_quantity: availQty,
         unit: formData.unit,
         delivery_price_per_km: deliveryPerKm,
         max_delivery_km: maxKm,
         selling_mode: formData.selling_mode,
+        harvest_date: formData.harvest_date || null,
         image_url: formData.image_url
       });
       navigate('/farmer/products');
@@ -281,6 +296,17 @@ const AddProductPage = () => {
               <option value="litre">litre</option>
             </select>
           </div>
+        </div>
+
+        {/* Harvest Date */}
+        <div>
+          <label className="block font-bold text-kisan-text mb-1">Harvest Date</label>
+          <input
+            type="date"
+            value={formData.harvest_date}
+            onChange={(e) => setFormData({ ...formData, harvest_date: e.target.value })}
+            className="w-full px-3.5 py-2.5 bg-gray-50 border border-kisan-border rounded-xl focus:outline-none focus:border-kisan-primary text-xs font-bold"
+          />
         </div>
 
         {/* Price & Quantity */}

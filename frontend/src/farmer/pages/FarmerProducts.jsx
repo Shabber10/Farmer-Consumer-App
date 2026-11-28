@@ -50,17 +50,30 @@ const FarmerProducts = () => {
       alert('Max delivery distance must be between 1 and 19 km');
       return;
     }
+    const indivPrice = parseFloat(editingProduct.price);
+    const bulkPrice = parseFloat(editingProduct.bulk_price);
+    const minBulkQty = parseFloat(editingProduct.min_bulk_quantity);
+    const availQty = parseFloat(editingProduct.available_quantity);
+    if (isNaN(bulkPrice) || isNaN(indivPrice) || bulkPrice >= indivPrice) {
+      alert('Bulk price must be lower than the individual/solo price.');
+      return;
+    }
+    if (isNaN(availQty) || isNaN(minBulkQty) || availQty <= minBulkQty) {
+      alert('Available quantity must be greater than the minimum bulk quantity.');
+      return;
+    }
     try {
       await api.put(`/api/products/${editingProduct.id}`, {
         name: editingProduct.name,
-        price: parseFloat(editingProduct.price),
-        bulk_price: parseFloat(editingProduct.bulk_price),
-        min_bulk_quantity: parseFloat(editingProduct.min_bulk_quantity),
-        available_quantity: parseFloat(editingProduct.available_quantity),
+        price: indivPrice,
+        bulk_price: bulkPrice,
+        min_bulk_quantity: minBulkQty,
+        available_quantity: availQty,
         delivery_price_per_km: parseFloat(editingProduct.delivery_price_per_km),
         max_delivery_km: maxKm,
         is_available: editingProduct.is_available,
-        selling_mode: editingProduct.selling_mode || 'both'
+        selling_mode: editingProduct.selling_mode || 'both',
+        harvest_date: editingProduct.harvest_date || null
       });
       setEditingProduct(null);
       fetchProducts();
@@ -348,6 +361,16 @@ const FarmerProducts = () => {
                     required
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block font-bold mb-1">Harvest Date</label>
+                <input
+                  type="date"
+                  value={editingProduct.harvest_date ? String(editingProduct.harvest_date).slice(0, 10) : ''}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, harvest_date: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-xl bg-white font-semibold"
+                />
               </div>
 
               <div>
