@@ -104,38 +104,44 @@ def create_app(config_class=Config):
 
 
 def _ensure_schema(app):
-    """Create missing tables and add any new columns idempotently on startup."""
+    """Create missing tables and add any missing model columns idempotently on startup."""
     try:
         with app.app_context():
             db.create_all()
             insp = inspect(db.engine)
-            is_pg = db.engine.dialect.name == 'postgresql'
-            ts_type = 'TIMESTAMP' if is_pg else 'DATETIME'
+            dialect = db.engine.dialect
+            existing_tables = set(insp.get_table_names())
 
-            if 'products' in insp.get_table_names():
-                cols = {c['name'] for c in insp.get_columns('products')}
-                stmts = []
-                if 'selling_mode' not in cols:
-                    stmts.append("ALTER TABLE products ADD COLUMN selling_mode VARCHAR(30) NOT NULL DEFAULT 'both'")
-                if 'bulk_disabled' not in cols:
-                    stmts.append("ALTER TABLE products ADD COLUMN bulk_disabled BOOLEAN NOT NULL DEFAULT FALSE")
-                if 'dispatch_started_at' not in cols:
-                    stmts.append(f"ALTER TABLE products ADD COLUMN dispatch_started_at {ts_type}")
-                for s in stmts:
-                    db.session.execute(text(s))
-
-            if 'community_orders' in insp.get_table_names():
-                cols = {c['name'] for c in insp.get_columns('community_orders')}
-                stmts = []
-                if 'campaign_id' not in cols:
-                    stmts.append("ALTER TABLE community_orders ADD COLUMN campaign_id INTEGER")
-                if 'expires_at' not in cols:
-                    stmts.append(f"ALTER TABLE community_orders ADD COLUMN expires_at {ts_type}")
-                for s in stmts:
-                    db.session.execute(text(s))
+            for table_name, table in db.metadata.tables.items():
+                if table_name not in existing_tables:
+                    continue
+                existing_cols = {c['name'] for c in insp.get_columns(table_name)}
+                for col in table.columns:
+                    if col.name in existing_cols or col.primary_key:
+                        continue
+                    col_type = col.type.compile(dialect=dialect)
+                    default_clause = ''
+                    if not col.nullable:
+                        if col.default is not None and col.default.is_scalar:
+                            val = col.default.arg
+                            if isinstance(val, bool):
+                                default_clause = f" DEFAULT {'TRUE' if val else 'FALSE'}"
+                            elif isinstance(val, (int, float)):
+                                default_clause = f" DEFAULT {val}"
+                            elif isinstance(val, str):
+                                default_clause = f" DEFAULT '{val}'"
+                        elif 'BOOL' in col_type.upper():
+                            default_clause = ' DEFAULT FALSE'
+                        elif 'INT' in col_type.upper() or 'NUMERIC' in col_type.upper() or 'FLOAT' in col_type.upper():
+                            default_clause = ' DEFAULT 0'
+                        elif 'CHAR' in col_type.upper() or 'TEXT' in col_type.upper():
+                            default_clause = " DEFAULT ''"
+                    stmt = f'ALTER TABLE "{table_name}" ADD COLUMN "{col.name}" {col_type}{default_clause}' if dialect.name == 'postgresql' else f'ALTER TABLE `{table_name}` ADD COLUMN `{col.name}` {col_type}{default_clause}'
+                    db.session.execute(text(stmt))
 
             db.session.commit()
     except Exception as exc:
+        db.session.rollback()
         print(f"[schema-sync] skipped or partial: {exc}")
 
 # WSGI application instance for production

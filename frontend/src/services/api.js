@@ -9,8 +9,8 @@ export const getBaseUrl = () => {
   if (typeof window !== 'undefined' && Capacitor.isNativePlatform()) {
     const customBackend = localStorage.getItem('kd_backend_url');
     if (customBackend) return customBackend;
-    // Default to local emulator backend 10.0.2.2:5050
-    return 'http://10.0.2.2:5050';
+    // Default to live Render backend for physical mobile devices
+    return 'https://farmer-consumer-app.onrender.com';
   }
   return '';
 };
