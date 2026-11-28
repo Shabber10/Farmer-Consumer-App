@@ -58,7 +58,7 @@ def export_all_tables_to_excel(output_path=None):
 
     for sheet_name, model in models:
         ws = wb.create_sheet(title=sheet_name[:31])
-        cols = [c.name for c in model.__table__.columns]
+        cols = [c.name for c in model.__table__.columns if c.name != 'password_hash']
         ws.append(cols)
         for col_idx in range(1, len(cols) + 1):
             cell = ws.cell(row=1, column=col_idx)

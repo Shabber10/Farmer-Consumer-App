@@ -18,54 +18,70 @@ CATEGORY_SPECS = [
     ("Vegetables", "Fresh, farm-harvested green vegetables, tubers, and organic produce.", "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=500&auto=format&fit=crop&q=80"),
     ("Fruits", "Naturally ripened, pesticide-free seasonal fruits harvested directly from orchards.", "https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=500&auto=format&fit=crop&q=80"),
     ("Grains", "Traditional paddy, wheat, millets, and staple cereals grown with authentic farming methods.", "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=500&auto=format&fit=crop&q=80"),
-    ("Pulses", "High-protein lentils, desi chickpeas, red gram (toor dal), and unpolished pulses.", "https://images.unsplash.com/photo-1585992629739-89f81ec40ef8?w=500&auto=format&fit=crop&q=80"),
+    ("Pulses", "High-protein lentils, desi chickpeas, red gram (toor dal), and unpolished pulses.", "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a2/Tur_Dal.JPG/960px-Tur_Dal.JPG"),
     ("Spices", "Pure farm turmeric, Guntur red chillies, coriander seeds, and whole aromatic spices.", "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=500&auto=format&fit=crop&q=80"),
     ("Other Products", "Cold-pressed organic oils, wild forest honey, organic jaggery, and rural dairy products.", "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=500&auto=format&fit=crop&q=80"),
 ]
 
-FARMER_SPECS = [
-    ("Ramesh Patel", "Green Valley Organic Farms", "Patancheru", "Sangareddy", "502319", 17.5326, 78.2642),
-    ("Lakshmi Devi", "Annapurna Natural Orchards", "Tellapur", "Sangareddy", "502032", 17.4692, 78.2889),
-    ("Venkatesh Rao", "Medchal Agro Farms", "Medchal", "Medchal-Malkajgiri", "501401", 17.6295, 78.4814),
-    ("Srinivas Reddy", "Shankarpally Rythu Farm", "Shankarpally", "Rangareddy", "501203", 17.4562, 78.1324),
-    ("Padma Kumari", "Bachupally Fresh Greens", "Bachupally", "Medchal-Malkajgiri", "500090", 17.5480, 78.3610),
-    ("Narsimha Yadav", "Dundigal Harvest Hub", "Dundigal", "Medchal-Malkajgiri", "500043", 17.5890, 78.4120),
-    ("Anjaiah Goud", "Moinabad Organic Belt", "Moinabad", "Rangareddy", "501504", 17.3291, 78.2683),
-    ("Malleshwar Rao", "Bowenpally Farm Collective", "Bowenpally", "Hyderabad", "500011", 17.4772, 78.4754),
-    ("Satyam Naidu", "Shamshabad Mango Groves", "Shamshabad", "Rangareddy", "501218", 17.2543, 78.4012),
-    ("Sujatha Reddy", "Kandi Natural Produce", "Kandi", "Sangareddy", "502285", 17.5710, 78.1220),
-    ("Bhaskar Verma", "Ghatkesar Spice & Pulse", "Ghatkesar", "Medchal-Malkajgiri", "501301", 17.4512, 78.6819),
-    ("Murali Krishna", "Miyapur Urban Agro", "Miyapur", "Hyderabad", "500049", 17.5110, 78.3520),
-    ("Harish Chandra", "Ameenpur Lakeview Farm", "Ameenpur", "Sangareddy", "502032", 17.5230, 78.3210),
-    ("Koteswara Rao", "Kompally Fresh Orchards", "Kompally", "Medchal-Malkajgiri", "500100", 17.5450, 78.4870),
-    ("Devendar Singh", "Chevella Millet & Honey", "Chevella", "Rangareddy", "501503", 17.3065, 78.1348),
+# Farm hubs near JNTU Metro Station (17.4987, 78.3887) within 5–18 km
+FARM_HUBS = [
+    ("Patancheru", "Sangareddy", "502319", 17.5326, 78.2642),
+    ("Tellapur", "Sangareddy", "502032", 17.4692, 78.2889),
+    ("Bachupally", "Medchal-Malkajgiri", "500090", 17.5480, 78.3610),
+    ("Dundigal", "Medchal-Malkajgiri", "500043", 17.5890, 78.4120),
+    ("Medchal", "Medchal-Malkajgiri", "501401", 17.6100, 78.4600),
+    ("Bowenpally", "Hyderabad", "500011", 17.4772, 78.4754),
+    ("Kompally", "Medchal-Malkajgiri", "500100", 17.5450, 78.4870),
+    ("Miyapur", "Hyderabad", "500049", 17.5110, 78.3520),
+    ("Ameenpur", "Sangareddy", "502032", 17.5230, 78.3210),
+    ("Nizampet Agro Belt", "Medchal-Malkajgiri", "500090", 17.5220, 78.3890),
+    ("Alwal", "Hyderabad", "500010", 17.5020, 78.5010),
+    ("Bolarum", "Hyderabad", "500010", 17.5310, 78.5150),
+    ("Narsingi", "Rangareddy", "500075", 17.3920, 78.3560),
+    ("Kollur", "Sangareddy", "502300", 17.4650, 78.2480),
+    ("Chandanagar", "Hyderabad", "500050", 17.4940, 78.3270),
+]
+
+FARMER_FIRST_NAMES = [
+    "Ramesh", "Lakshmi", "Venkatesh", "Srinivas", "Padma", "Narsimha", "Anjaiah", "Malleshwar", "Satyam", "Sujatha",
+    "Bhaskar", "Murali", "Harish", "Koteswara", "Devendar", "Rajeshwar", "Subba", "Chandraiah", "Prakasham", "Kishan",
+    "Mahesh", "Ramulu", "Yadaiah", "Balram", "Sudhakar",
+]
+
+FARMER_LAST_NAMES = [
+    "Patel", "Devi", "Rao", "Reddy", "Kumari", "Yadav", "Goud", "Naidu", "Verma", "Krishna",
+]
+
+FARM_SUFFIXES = [
+    "Organic Farms", "Natural Orchards", "Agro Farms", "Rythu Farm", "Fresh Greens",
+    "Harvest Hub", "Farm Collective", "Natural Produce", "Kisan Orchards", "Eco Farms",
 ]
 
 PRODUCT_CATALOG = [
-    ("Desi Tomatoes", "Vegetables", "kg", 32, 22, 40, 140, True, "both", "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=600&auto=format&fit=crop&q=80"),
-    ("Red Onions", "Vegetables", "kg", 38, 28, 50, 180, False, "both", "https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=600&auto=format&fit=crop&q=80"),
-    ("Farm Fresh Potatoes", "Vegetables", "kg", 30, 22, 50, 200, False, "both", "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=600&auto=format&fit=crop&q=80"),
-    ("Green Spinach (Palak)", "Vegetables", "bunch", 24, 16, 30, 90, True, "both", "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=600&auto=format&fit=crop&q=80"),
-    ("Okra (Bhindi)", "Vegetables", "kg", 48, 35, 30, 110, True, "individual_only", "https://images.unsplash.com/photo-1425543103986-22abb7d7e8d2?w=600&auto=format&fit=crop&q=80"),
-    ("Fresh Carrots", "Vegetables", "kg", 54, 40, 35, 120, True, "both", "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=600&auto=format&fit=crop&q=80"),
-    ("Green Capsicum", "Vegetables", "kg", 60, 44, 30, 100, False, "both", "https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?w=600&auto=format&fit=crop&q=80"),
-    ("Cauliflower", "Vegetables", "piece", 40, 28, 30, 95, True, "apartments_only", "https://images.unsplash.com/photo-1568584711075-3d021a7c3ca3?w=600&auto=format&fit=crop&q=80"),
-    ("Banganapalli Mangoes", "Fruits", "kg", 110, 82, 40, 160, True, "both", "https://images.unsplash.com/photo-1553279768-865429fa0078?w=600&auto=format&fit=crop&q=80"),
-    ("Fresh Red Dragon Fruit", "Fruits", "kg", 140, 98, 40, 120, True, "both", "https://images.unsplash.com/photo-1527325678964-54921661f888?w=600&auto=format&fit=crop&q=80"),
-    ("Ruby Pomegranate", "Fruits", "kg", 150, 112, 35, 110, True, "both", "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=600&auto=format&fit=crop&q=80"),
-    ("Yellaki Bananas", "Fruits", "dozen", 65, 48, 30, 120, False, "both", "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=600&auto=format&fit=crop&q=80"),
-    ("Sweet Watermelon", "Fruits", "piece", 55, 38, 30, 130, False, "apartments_only", "https://images.unsplash.com/photo-1563114773-84221bd62daa?w=600&auto=format&fit=crop&q=80"),
-    ("Fresh Guava", "Fruits", "kg", 70, 50, 30, 100, True, "individual_only", "https://images.unsplash.com/photo-1536511132770-e5058c7e8c46?w=600&auto=format&fit=crop&q=80"),
-    ("Sona Masoori Rice (Aged)", "Grains", "kg", 64, 52, 50, 300, True, "both", "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=600&auto=format&fit=crop&q=80"),
-    ("Foxtail Millet (Korralu)", "Grains", "kg", 95, 76, 30, 120, True, "both", "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600&auto=format&fit=crop&q=80"),
-    ("Organic Jowar (Sorghum)", "Grains", "kg", 58, 45, 40, 150, True, "apartments_only", "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&auto=format&fit=crop&q=80"),
-    ("Unpolished Toor Dal", "Pulses", "kg", 155, 126, 35, 140, True, "both", "https://images.unsplash.com/photo-1585992629739-89f81ec40ef8?w=600&auto=format&fit=crop&q=80"),
-    ("Desi Moong Dal", "Pulses", "kg", 140, 114, 30, 120, True, "both", "https://images.unsplash.com/photo-1515543904379-3d757afe72e4?w=600&auto=format&fit=crop&q=80"),
-    ("Black Chickpeas (Kala Chana)", "Pulses", "kg", 110, 88, 30, 110, False, "both", "https://images.unsplash.com/photo-1585996926237-9a4b7d2b8a3f?w=600&auto=format&fit=crop&q=80"),
-    ("Nizamabad Turmeric Powder", "Spices", "kg", 220, 175, 25, 90, True, "both", "https://images.unsplash.com/photo-1615485500704-8e990f9900f7?w=600&auto=format&fit=crop&q=80"),
-    ("Guntur Red Chillies", "Spices", "kg", 260, 210, 25, 85, False, "both", "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=600&auto=format&fit=crop&q=80"),
+    ("Desi Tomatoes", "Vegetables", "kg", 32, 22, 35, 140, True, "both", "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=600&auto=format&fit=crop&q=80"),
+    ("Red Onions", "Vegetables", "kg", 38, 28, 40, 180, False, "both", "https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=600&auto=format&fit=crop&q=80"),
+    ("Farm Fresh Potatoes", "Vegetables", "kg", 30, 22, 40, 200, False, "both", "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=600&auto=format&fit=crop&q=80"),
+    ("Green Spinach (Palak)", "Vegetables", "bunch", 24, 16, 25, 95, True, "both", "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=600&auto=format&fit=crop&q=80"),
+    ("Okra (Bhindi)", "Vegetables", "kg", 48, 35, 25, 110, True, "individual_only", "https://images.unsplash.com/photo-1425543103986-22abb7d7e8d2?w=600&auto=format&fit=crop&q=80"),
+    ("Fresh Carrots", "Vegetables", "kg", 54, 40, 30, 120, True, "both", "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=600&auto=format&fit=crop&q=80"),
+    ("Green Capsicum", "Vegetables", "kg", 60, 44, 25, 100, False, "both", "https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?w=600&auto=format&fit=crop&q=80"),
+    ("Cauliflower", "Vegetables", "piece", 40, 28, 25, 95, True, "both", "https://images.unsplash.com/photo-1568584711075-3d021a7c3ca3?w=600&auto=format&fit=crop&q=80"),
+    ("Banganapalli Mangoes", "Fruits", "kg", 110, 82, 35, 160, True, "both", "https://images.unsplash.com/photo-1553279768-865429fa0078?w=600&auto=format&fit=crop&q=80"),
+    ("Fresh Red Dragon Fruit", "Fruits", "kg", 140, 98, 35, 120, True, "both", "https://images.unsplash.com/photo-1527325678964-54921661f888?w=600&auto=format&fit=crop&q=80"),
+    ("Ruby Pomegranate", "Fruits", "kg", 150, 112, 30, 110, True, "both", "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=600&auto=format&fit=crop&q=80"),
+    ("Yellaki Bananas", "Fruits", "dozen", 65, 48, 25, 120, False, "both", "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=600&auto=format&fit=crop&q=80"),
+    ("Sweet Watermelon", "Fruits", "piece", 55, 38, 25, 130, False, "both", "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ae/Watermelon_cross_BNC.jpg/960px-Watermelon_cross_BNC.jpg"),
+    ("Fresh Guava", "Fruits", "kg", 70, 50, 25, 100, True, "individual_only", "https://images.unsplash.com/photo-1536511132770-e5058c7e8c46?w=600&auto=format&fit=crop&q=80"),
+    ("Sona Masoori Rice (Aged)", "Grains", "kg", 64, 52, 40, 300, True, "both", "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=600&auto=format&fit=crop&q=80"),
+    ("Foxtail Millet (Korralu)", "Grains", "kg", 95, 76, 25, 120, True, "both", "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600&auto=format&fit=crop&q=80"),
+    ("Organic Jowar (Sorghum)", "Grains", "kg", 58, 45, 35, 150, True, "apartments_only", "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&auto=format&fit=crop&q=80"),
+    ("Unpolished Toor Dal", "Pulses", "kg", 155, 126, 30, 140, True, "both", "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a2/Tur_Dal.JPG/960px-Tur_Dal.JPG"),
+    ("Desi Moong Dal", "Pulses", "kg", 140, 114, 25, 120, True, "both", "https://images.unsplash.com/photo-1515543904379-3d757afe72e4?w=600&auto=format&fit=crop&q=80"),
+    ("Black Chickpeas (Kala Chana)", "Pulses", "kg", 110, 88, 25, 110, False, "both", "https://upload.wikimedia.org/wikipedia/commons/3/3d/Chickpea.jpg"),
+    ("Nizamabad Turmeric Powder", "Spices", "kg", 220, 175, 20, 90, True, "both", "https://images.unsplash.com/photo-1615485500704-8e990f9900f7?w=600&auto=format&fit=crop&q=80"),
+    ("Guntur Red Chillies", "Spices", "kg", 260, 210, 20, 85, False, "both", "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=600&auto=format&fit=crop&q=80"),
     ("Wild Forest Honey", "Other Products", "litre", 480, 390, 20, 75, True, "both", "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=600&auto=format&fit=crop&q=80"),
-    ("Organic Sugarcane Jaggery", "Other Products", "kg", 85, 66, 35, 140, True, "both", "https://images.unsplash.com/photo-1604467794349-0b74285de7e7?w=600&auto=format&fit=crop&q=80"),
+    ("Organic Sugarcane Jaggery", "Other Products", "kg", 85, 66, 30, 140, True, "both", "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5a/Jaggery%2C_bd.jpg/960px-Jaggery%2C_bd.jpg"),
 ]
 
 # 4 Apartment Communities near JNTU Metro Station, Hyderabad
@@ -109,7 +125,7 @@ REVIEW_COMMENTS = [
 
 
 def reset_and_seed_fresh():
-    """Purge all non-admin data and seed 50 JNTU consumers, 4 apartments, 15 farmers, 24 products with harvest_date, and rich order/review history."""
+    """Purge all non-admin data and seed 100 farmers (each with >=1 online product with harvest_date), 50 JNTU consumers, 4 apartments, and rich order/review history."""
     random.seed(202611)
     today = date.today()
 
@@ -153,7 +169,7 @@ def reset_and_seed_fresh():
         db.session.add(admin)
         db.session.flush()
 
-    # 3. Ensure Categories exist
+    # 3. Ensure Categories exist (and update images)
     cat_map = {}
     for name, desc, img in CATEGORY_SPECS:
         cat = Category.query.filter_by(name=name).first()
@@ -161,16 +177,22 @@ def reset_and_seed_fresh():
             cat = Category(name=name, description=desc, image=img, is_active=True)
             db.session.add(cat)
             db.session.flush()
+        else:
+            cat.image = img
         cat_map[name] = cat.id
 
-    # 4. Seed 15 Farmers & 24 Products (all with harvest_date)
+    # 4. Seed 100 Farmers around Hyderabad / JNTU Metro & >= 1 online Product per farmer (all with harvest_date)
     farmers = []
     products = []
-    for idx, (fname, farm_name, village, district, pincode, lat, lng) in enumerate(FARMER_SPECS, start=1):
+    for idx in range(1, 101):
+        fname = f"{FARMER_FIRST_NAMES[(idx - 1) % len(FARMER_FIRST_NAMES)]} {FARMER_LAST_NAMES[((idx - 1) // 10 + idx) % len(FARMER_LAST_NAMES)]}"
+        village, district, pincode, base_lat, base_lng = FARM_HUBS[(idx - 1) % len(FARM_HUBS)]
+        farm_name = f"{fname.split()[0]} {FARM_SUFFIXES[(idx - 1) % len(FARM_SUFFIXES)]}"
+
         u = User(
             full_name=fname,
             email=f"farmer{idx}@kisandirect.in",
-            mobile_number=f"98765432{idx:02d}",
+            mobile_number=f"987654{idx:04d}",
             role="farmer",
             language="en",
             is_verified=True,
@@ -188,40 +210,48 @@ def reset_and_seed_fresh():
             state="Telangana",
             pincode=pincode,
             landmark=f"Near {village} Rythu Vedika",
-            latitude=Decimal(str(lat)),
-            longitude=Decimal(str(lng)),
+            latitude=Decimal(str(round(base_lat + random.uniform(-0.008, 0.008), 6))),
+            longitude=Decimal(str(round(base_lng + random.uniform(-0.008, 0.008), 6))),
         )
         db.session.add(fp)
         db.session.flush()
         farmers.append(fp)
 
-    for idx, spec in enumerate(PRODUCT_CATALOG):
-        pname, cat_name, unit, price, bulk_p, min_bulk, avail_qty, is_org, sell_mode, img_url = spec
-        fp = farmers[idx % len(farmers)]
-        harvest_dt = today - timedelta(days=idx % 3)
-        prod = Product(
-            farmer_id=fp.id,
-            category_id=cat_map[cat_name],
-            name=pname,
-            description=f"Freshly harvested {pname} directly from {fp.farm_name}, {fp.village}. Harvested on {harvest_dt.isoformat()}.",
-            image_url=img_url,
-            price=Decimal(str(price)),
-            bulk_price=Decimal(str(bulk_p)),
-            min_bulk_quantity=Decimal(str(min_bulk)),
-            delivery_price_per_km=Decimal(str(random.choice([4, 5, 6, 8]))),
-            max_delivery_km=Decimal(str(random.randint(14, 19))),
-            unit=unit,
-            available_quantity=Decimal(str(avail_qty)),
-            location=f"{fp.village}, {fp.district}",
-            harvest_date=harvest_dt,
-            is_organic=is_org,
-            is_available=True,
-            selling_mode=sell_mode,
-            bulk_disabled=False,
-        )
-        db.session.add(prod)
-        db.session.flush()
-        products.append(prod)
+        # Guarantee at least 1 online product per farmer (2 products for first 30 farmers = 130 products total)
+        num_prods = 2 if idx <= 30 else 1
+        for p_offset in range(num_prods):
+            spec = PRODUCT_CATALOG[(idx - 1 + p_offset * 7) % len(PRODUCT_CATALOG)]
+            pname, cat_name, unit, base_p, base_bulk, min_bulk, base_avail, is_org, sell_mode, img_url = spec
+            # Keep almost all products visible to individual & apartment consumers, with a small variation
+            price_val = Decimal(str(max(15, base_p + ((idx % 5) - 2))))
+            bulk_val = Decimal(str(min(int(price_val) - 5, max(10, base_bulk + ((idx % 4) - 2)))))
+            avail_val = Decimal(str(base_avail + (idx % 5) * 10))
+            harvest_dt = today - timedelta(days=(idx + p_offset) % 3)
+
+            prod = Product(
+                farmer_id=fp.id,
+                category_id=cat_map[cat_name],
+                name=pname,
+                description=f"Freshly harvested {pname} directly from {farm_name}, {village}. Harvested on {harvest_dt.isoformat()}.",
+                image_url=img_url,
+                price=price_val,
+                bulk_price=bulk_val,
+                min_bulk_quantity=Decimal(str(min_bulk)),
+                delivery_price_per_km=Decimal(str(random.choice([4, 5, 6, 8]))),
+                max_delivery_km=Decimal("20.00"),
+                unit=unit,
+                available_quantity=avail_val,
+                location=f"{village}, {district}",
+                harvest_date=harvest_dt,
+                is_organic=is_org,
+                is_available=True,
+                selling_mode=sell_mode if (idx % 12 == 0) else "both",
+                bulk_disabled=False,
+                dispatch_started_at=datetime.utcnow() - timedelta(hours=3),
+            )
+            db.session.add(prod)
+            db.session.flush()
+            products.append(prod)
 
     # 5. Seed 50 Consumers near JNTU Metro Station, Hyderabad
     buyers = []
@@ -317,7 +347,7 @@ def reset_and_seed_fresh():
         ))
     db.session.flush()
 
-    # 7. Seed 4 BulkCampaigns & linked CommunityOrders (3 active with timers, 1 completed & price-distributed)
+    # 7. Seed 4 BulkCampaigns & linked CommunityOrders
     for c_i in range(4):
         prod = products[c_i]
         is_completed_pool = (c_i == 3)
@@ -381,8 +411,10 @@ def reset_and_seed_fresh():
                         message=f"6/10 neighbors joined in {target_comm.name}. Add your share before timer ends!",
                     ))
 
-    # 8. Seed 25 Past & Active Orders + 20 ProductReviews + OrderFeedbacks
-    for o_i in range(25):
+    # 8. Seed 35 Past & Active Orders + ProductReviews + OrderFeedbacks
+    orders_count = 35
+    reviews_count = 0
+    for o_i in range(orders_count):
         buyer = buyers[o_i % len(buyers)]
         addr = buyer_addresses[o_i % len(buyer_addresses)]
         prod = products[o_i % len(products)]
@@ -390,13 +422,13 @@ def reset_and_seed_fresh():
         sub = prod.price * qty
         deliv = Decimal("0.00") if sub >= Decimal("500.00") else Decimal("40.00")
         tot = sub + deliv
-        days_ago = max(0, 18 - o_i)
+        days_ago = max(0, 20 - (o_i % 20))
         created_dt = datetime.utcnow() - timedelta(days=days_ago, hours=o_i % 6)
         ord_num = f"KD-{(today - timedelta(days=days_ago)).strftime('%Y%m%d')}-FR{o_i + 1:04d}"
 
-        if o_i < 18:
+        if o_i < 24:
             status = "Delivered"
-        elif o_i < 23:
+        elif o_i < 31:
             status = "Confirmed"
         else:
             status = "Packed"
@@ -421,7 +453,7 @@ def reset_and_seed_fresh():
             farmer_id=prod.farmer_id,
             subtotal=sub,
             status=status,
-            delivery_otp=str(1100 + o_i * 137 % 8899),
+            delivery_otp=str(1100 + (o_i * 137) % 8899),
             created_at=created_dt,
         )
         db.session.add(fo)
@@ -458,7 +490,8 @@ def reset_and_seed_fresh():
                 comment=REVIEW_COMMENTS[o_i % len(REVIEW_COMMENTS)],
                 created_at=created_dt + timedelta(hours=3),
             ))
-            if o_i < 10:
+            reviews_count += 1
+            if o_i < 12:
                 db.session.add(OrderFeedback(
                     order_id=order.id,
                     buyer_id=buyer.id,
@@ -496,8 +529,8 @@ def reset_and_seed_fresh():
         "consumers": len(buyers),
         "apartments": len(communities),
         "products": len(products),
-        "orders": 25,
-        "product_reviews": 18,
+        "orders": orders_count,
+        "product_reviews": reviews_count,
         "community_reviews": 12,
         "harvest_date_all_set": True,
     }
