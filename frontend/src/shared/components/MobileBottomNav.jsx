@@ -62,7 +62,7 @@ const MobileBottomNav = () => {
           <button
             onClick={() => navigate('/farmer/add-product')}
             className="w-12 h-12 -mt-5 bg-kisan-primary hover:bg-kisan-dark text-white rounded-full flex items-center justify-center shadow-lg border-2 border-white tap-effect"
-            title="Add Produce"
+            title="Add Product"
           >
             <PlusCircle className="w-6 h-6" />
           </button>

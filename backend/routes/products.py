@@ -16,6 +16,15 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
 
+def _resolve_product(product_ref):
+    ref = str(product_ref or '').strip()
+    if not ref:
+        return None
+    prod = Product.query.filter_by(slug=ref).first()
+    if not prod and ref.isdigit():
+        prod = Product.query.get(int(ref))
+    return prod
+
 @products_bp.route('', methods=['GET'])
 def get_products():
     category_id = request.args.get('category_id', type=int)
@@ -94,9 +103,9 @@ def get_products():
 
     return jsonify({'products': [p.to_dict() for p in products]}), 200
 
-@products_bp.route('/<int:product_id>', methods=['GET'])
-def get_product(product_id):
-    product = Product.query.get(product_id)
+@products_bp.route('/<string:product_ref>', methods=['GET'])
+def get_product(product_ref):
+    product = _resolve_product(product_ref)
     if not product:
         return jsonify({'error': 'Product not found'}), 404
     return jsonify({'product': product.to_dict()}), 200
@@ -232,22 +241,24 @@ def create_product():
         )
         product.sync_stock_flags()
         db.session.add(product)
+        db.session.flush()
+        product.ensure_slug(force=True)
         db.session.commit()
         return jsonify({'message': 'Product added successfully', 'product': product.to_dict()}), 201
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Failed to create product: {str(e)}'}), 500
 
-@products_bp.route('/<int:product_id>', methods=['PUT'])
+@products_bp.route('/<string:product_ref>', methods=['PUT'])
 @jwt_required()
-def update_product(product_id):
+def update_product(product_ref):
     user_id = int(get_jwt_identity())
     claims = get_jwt()
     if claims.get('role') != 'farmer':
         return jsonify({'error': 'Unauthorized'}), 403
 
     farmer = FarmerProfile.query.filter_by(user_id=user_id).first()
-    product = Product.query.get(product_id)
+    product = _resolve_product(product_ref)
     if not product:
         return jsonify({'error': 'Product not found'}), 404
     if product.farmer_id != farmer.id:
@@ -310,19 +321,20 @@ def update_product(product_id):
         return jsonify({'error': 'Available quantity must be greater than minimum bulk quantity'}), 400
 
     product.sync_stock_flags()
+    product.ensure_slug(force=('name' in data))
     db.session.commit()
     return jsonify({'message': 'Product updated successfully', 'product': product.to_dict()}), 200
 
-@products_bp.route('/<int:product_id>', methods=['DELETE'])
+@products_bp.route('/<string:product_ref>', methods=['DELETE'])
 @jwt_required()
-def delete_product(product_id):
+def delete_product(product_ref):
     user_id = int(get_jwt_identity())
     claims = get_jwt()
     if claims.get('role') != 'farmer':
         return jsonify({'error': 'Unauthorized'}), 403
 
     farmer = FarmerProfile.query.filter_by(user_id=user_id).first()
-    product = Product.query.get(product_id)
+    product = _resolve_product(product_ref)
     if not product:
         return jsonify({'error': 'Product not found'}), 404
     if product.farmer_id != farmer.id:

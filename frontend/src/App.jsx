@@ -231,6 +231,11 @@ function AppContent() {
               <CategoriesPage />
             </ProtectedRoute>
           } />
+          <Route path="/buyer/products/:slug" element={
+            <ProtectedRoute requiredRole="buyer">
+              <ProductDetailPage />
+            </ProtectedRoute>
+          } />
           <Route path="/buyer/product/:id" element={
             <ProtectedRoute requiredRole="buyer">
               <ProductDetailPage />

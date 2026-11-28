@@ -1,3 +1,5 @@
+import hashlib
+import re
 from datetime import datetime
 from decimal import Decimal
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -183,6 +185,7 @@ class Product(db.Model):
     farmer_id = db.Column(db.Integer, db.ForeignKey('farmer_profiles.id', ondelete='CASCADE'), nullable=False, index=True)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False, index=True)
     name = db.Column(db.String(150), nullable=False, index=True)
+    slug = db.Column(db.String(180), unique=True, nullable=True, index=True)
     description = db.Column(db.Text, nullable=True)
     image_url = db.Column(db.String(500), nullable=True)
     price = db.Column(db.Numeric(10, 2), nullable=False)
@@ -213,6 +216,17 @@ class Product(db.Model):
             min_b = self.min_bulk_quantity or Decimal('50.00')
             self.bulk_disabled = bool(self.available_quantity < min_b)
 
+    def build_slug(self):
+        base = re.sub(r'[^a-z0-9]+', '-', (self.name or 'product').lower()).strip('-')[:48] or 'fresh-product'
+        token_src = f"kd-prod-slug-2026:{self.id or ''}:{self.farmer_id or ''}:{self.name or ''}"
+        short_hash = hashlib.sha256(token_src.encode('utf-8')).hexdigest()[:7]
+        return f"{base}-{short_hash}"
+
+    def ensure_slug(self, force=False):
+        if force or not self.slug:
+            self.slug = self.build_slug()
+        return self.slug
+
     def to_dict(self):
         farmer_data = self.farmer.to_dict() if self.farmer else {}
         prod_reviews = ProductReview.query.filter_by(product_id=self.id).all()
@@ -220,6 +234,7 @@ class Product(db.Model):
         average_rating = round(sum(r.rating for r in prod_reviews) / review_count, 1) if review_count > 0 else 0.0
         return {
             'id': self.id,
+            'slug': self.slug or self.build_slug(),
             'farmer_id': self.farmer_id,
             'farmer_name': farmer_data.get('farmer_name', 'Local Farmer'),
             'farm_name': farmer_data.get('farm_name', 'Farm Fresh'),
@@ -387,6 +402,7 @@ class OrderItem(db.Model):
             'order_id': self.order_id,
             'farmer_order_id': self.farmer_order_id,
             'product_id': self.product_id,
+            'product_slug': (self.product.slug or self.product.build_slug()) if self.product else None,
             'product_name': self.product_name_snapshot,
             'product_image': self.product.image_url if self.product else None,
             'unit_price': float(self.unit_price),

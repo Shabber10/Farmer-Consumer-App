@@ -147,6 +147,10 @@ def _ensure_schema(app):
                     stmt = f'ALTER TABLE "{table_name}" ADD COLUMN "{col.name}" {col_type}{default_clause}' if dialect.name == 'postgresql' else f'ALTER TABLE `{table_name}` ADD COLUMN `{col.name}` {col_type}{default_clause}'
                     db.session.execute(text(stmt))
 
+            from backend.models import Product
+            missing_slugs = Product.query.filter((Product.slug == None) | (Product.slug == '')).all()
+            for prod in missing_slugs:
+                prod.ensure_slug(force=True)
             db.session.commit()
     except Exception as exc:
         db.session.rollback()

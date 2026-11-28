@@ -633,7 +633,7 @@ const AdminDashboard = () => {
                 className="flex items-center space-x-1.5 bg-kisan-primary text-white text-xs font-bold px-3.5 py-2 rounded-xl hover:bg-kisan-dark shadow-sm transition-colors"
               >
                 <Plus className="w-4 h-4" />
-                <span>Add Produce</span>
+                <span>Add Product</span>
               </button>
             )}
           </div>
@@ -911,7 +911,7 @@ const AdminDashboard = () => {
             <div className="text-center py-12 text-kisan-muted">
               <ShoppingBag className="w-10 h-10 mx-auto text-gray-300 mb-2" />
               <p className="text-xs font-semibold">No agricultural produce listed currently.</p>
-              <p className="text-[11px] text-gray-400">Farmers can add their produce, or you can click "Add Produce" above.</p>
+              <p className="text-[11px] text-gray-400">Farmers can add their products, or you can click "Add Product" above.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -1668,7 +1668,7 @@ const AdminDashboard = () => {
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-fade-in max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-              <h3 className="font-bold text-base text-kisan-dark">Add Marketplace Produce</h3>
+              <h3 className="font-bold text-base text-kisan-dark">Add Marketplace Product</h3>
               <button onClick={() => setShowAddProductModal(false)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
@@ -1784,7 +1784,7 @@ const AdminDashboard = () => {
                   type="submit"
                   className="w-full bg-kisan-primary hover:bg-kisan-dark text-white font-bold py-2.5 rounded-xl transition-colors shadow-sm"
                 >
-                  Publish Produce Listing
+                  Publish Product Listing
                 </button>
               </div>
             </form>

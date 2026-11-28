@@ -555,7 +555,7 @@ const FarmerCommunities = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-kisan-dark mb-1">Select Produce *</label>
+              <label className="block text-xs font-bold text-kisan-dark mb-1">Select Product *</label>
               <select
                 value={campaignForm.product_id}
                 onChange={(e) => handleProductChange(e.target.value)}

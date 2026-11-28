@@ -511,7 +511,7 @@ const AddProductPage = () => {
           disabled={submitting || uploading}
           className="w-full mt-2 bg-kisan-primary text-white py-3.5 rounded-xl font-bold text-sm shadow-md hover:bg-kisan-dark transition-all disabled:opacity-50"
         >
-          {submitting ? 'Publishing Produce...' : t('saveProduct')}
+          {submitting ? 'Publishing Product...' : t('saveProduct')}
         </button>
       </form>
     </div>

@@ -133,7 +133,7 @@ const MyOrdersPage = () => {
                           </div>
                           <div className="flex items-center space-x-2 flex-shrink-0">
                             <Link
-                              to={`/buyer/product/${it.product_id}#reviews`}
+                              to={`/buyer/products/${it.product_slug || it.product_id}#reviews`}
                               className="inline-flex items-center space-x-1 text-[10px] font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded-lg border border-amber-200"
                             >
                               <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />

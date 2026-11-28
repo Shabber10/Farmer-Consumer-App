@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import {
   Sparkles, MapPin, Plus, Minus, ShoppingCart, User, ShieldCheck,
-  Star, ThumbsUp, CheckCircle2, Truck, MessageSquare, Trash2, Send, Leaf
+  Star, ThumbsUp, CheckCircle2, Truck, MessageSquare, Trash2, Send, Leaf, Calendar
 } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -34,8 +34,10 @@ const StarPicker = ({ value, onChange, size = 'w-6 h-6' }) => (
 );
 
 const ProductDetailPage = () => {
-  const { id } = useParams();
+  const { slug, id } = useParams();
+  const productRef = slug || id;
   const location = useLocation();
+  const navigate = useNavigate();
   const { addToCart } = useCart();
   const { user, isAuthenticated, role } = useAuth();
   const { language, t } = useLanguage();
@@ -63,10 +65,14 @@ const ProductDetailPage = () => {
   const fetchProductAndReviews = useCallback(async (silent = false) => {
     try {
       const [prodRes, revRes] = await Promise.all([
-        api.get(`/api/products/${id}`),
-        api.get(`/api/reviews/product/${id}?sort=${sortBy}`)
+        api.get(`/api/products/${productRef}`),
+        api.get(`/api/reviews/product/${productRef}?sort=${sortBy}`)
       ]);
-      setProduct(prodRes.data.product);
+      const fetchedProduct = prodRes.data.product;
+      setProduct(fetchedProduct);
+      if (!slug && fetchedProduct?.slug) {
+        navigate(`/buyer/products/${fetchedProduct.slug}${location.hash || ''}`, { replace: true });
+      }
       setSummary(revRes.data.summary);
       setReviews(revRes.data.reviews || []);
       if (!silent && revRes.data.my_review) {
@@ -82,7 +88,7 @@ const ProductDetailPage = () => {
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [id, sortBy]);
+  }, [productRef, slug, location.hash, navigate, sortBy]);
 
   useEffect(() => {
     fetchProductAndReviews(false);
@@ -124,7 +130,7 @@ const ProductDetailPage = () => {
     if (!reviewForm.comment.trim()) return;
     try {
       setSubmittingReview(true);
-      await api.post(`/api/reviews/product/${id}`, reviewForm);
+      await api.post(`/api/reviews/product/${productRef}`, reviewForm);
       setShowReviewForm(false);
       setToast('Thank you! Your review has been published.');
       setTimeout(() => setToast(''), 3000);
@@ -274,6 +280,22 @@ const ProductDetailPage = () => {
                   ₹{product.delivery_price_per_km ?? 0}/km • &le;{product.max_delivery_km ?? 15}km
                 </span>
               </div>
+
+              {product.harvest_date && (
+                <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-gray-200/60">
+                  <span className="flex items-center font-bold text-emerald-900">
+                    <Calendar className="w-3.5 h-3.5 text-emerald-600 mr-1.5 flex-shrink-0" />
+                    <span>Harvest Date</span>
+                  </span>
+                  <span className="font-extrabold text-emerald-800 bg-emerald-100/70 px-2.5 py-0.5 rounded-lg border border-emerald-200">
+                    {new Date(String(product.harvest_date).slice(0, 10) + 'T00:00:00').toLocaleDateString('en-IN', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="mt-2.5 flex items-center space-x-2 text-[11px] font-medium text-emerald-800 bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">

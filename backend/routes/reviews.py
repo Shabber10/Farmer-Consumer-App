@@ -34,11 +34,22 @@ def _build_summary(reviews_list):
     }
 
 
-@reviews_bp.route('/product/<int:product_id>', methods=['GET'])
-def get_product_reviews(product_id):
-    product = Product.query.get(product_id)
+def _resolve_product(product_ref):
+    ref = str(product_ref or '').strip()
+    if not ref:
+        return None
+    prod = Product.query.filter_by(slug=ref).first()
+    if not prod and ref.isdigit():
+        prod = Product.query.get(int(ref))
+    return prod
+
+
+@reviews_bp.route('/product/<string:product_ref>', methods=['GET'])
+def get_product_reviews(product_ref):
+    product = _resolve_product(product_ref)
     if not product:
         return jsonify({'error': 'Product not found'}), 404
+    product_id = product.id
 
     sort = request.args.get('sort', 'recent')
     query = ProductReview.query.filter_by(product_id=product_id)
@@ -93,17 +104,18 @@ def get_product_reviews(product_id):
     }), 200
 
 
-@reviews_bp.route('/product/<int:product_id>', methods=['POST'])
+@reviews_bp.route('/product/<string:product_ref>', methods=['POST'])
 @jwt_required()
-def submit_product_review(product_id):
+def submit_product_review(product_ref):
     user_id = int(get_jwt_identity())
     claims = get_jwt()
     if claims.get('role') not in ['buyer', 'admin']:
         return jsonify({'error': 'Only buyers can submit product reviews'}), 403
 
-    product = Product.query.get(product_id)
+    product = _resolve_product(product_ref)
     if not product:
         return jsonify({'error': 'Product not found'}), 404
+    product_id = product.id
 
     data = request.get_json() or {}
     try:

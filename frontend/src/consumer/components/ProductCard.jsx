@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Plus, Minus, ShieldCheck, Leaf, Star } from 'lucide-react';
+import { MapPin, Plus, Minus, ShieldCheck, Leaf, Star, Calendar } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getLocalizedProductName, getLocalizedUnit } from '../../utils/productLocalization';
@@ -52,7 +52,7 @@ const ProductCard = ({ product, onQuickAdd, shoppingMode = 'community' }) => {
   return (
     <div className="w-full min-w-0 max-w-full bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between group">
       {/* Product Image & Badges */}
-      <Link to={`/buyer/product/${product.id}`} className="relative h-32 sm:h-36 overflow-hidden bg-gray-50 block">
+      <Link to={`/buyer/products/${product.slug || product.id}`} className="relative h-32 sm:h-36 overflow-hidden bg-gray-50 block">
         {product.image_url && product.image_url !== '/placeholder-produce.jpg' ? (
           <img
             src={getImageUrl(product.image_url)}
@@ -90,7 +90,7 @@ const ProductCard = ({ product, onQuickAdd, shoppingMode = 'community' }) => {
           </div>
 
           {/* Title with uniform 2-line height */}
-          <Link to={`/buyer/product/${product.id}`} className="block">
+          <Link to={`/buyer/products/${product.slug || product.id}`} className="block">
             <h3 className="font-bold text-xs sm:text-sm text-gray-900 group-hover:text-emerald-700 transition-colors line-clamp-2 leading-tight h-8 flex items-center">
               {getLocalizedProductName(product.name, language)}
             </h3>
@@ -110,6 +110,20 @@ const ProductCard = ({ product, onQuickAdd, shoppingMode = 'community' }) => {
               </span>
             )}
           </div>
+
+          {product.harvest_date && (
+            <div className="flex items-center space-x-1 text-[10px] font-semibold text-amber-800 bg-amber-50/80 border border-amber-200/60 px-1.5 py-0.5 rounded-md w-fit mt-1">
+              <Calendar className="w-2.5 h-2.5 text-amber-600 flex-shrink-0" />
+              <span>
+                Harvested:{' '}
+                {new Date(String(product.harvest_date).slice(0, 10) + 'T00:00:00').toLocaleDateString('en-IN', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                })}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Pricing & Add to Cart */}
