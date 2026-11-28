@@ -323,16 +323,21 @@ def reset_and_seed_fresh():
         camp = BulkCampaign(
             farmer_id=prod.farmer_id,
             product_id=prod.id,
-            title=f"Fresh {prod.name} Community Pool",
+            mode="supply_campaign",
             total_stock_kg=Decimal("120.00"),
             min_bulk_kg=prod.min_bulk_quantity,
-            reserved_kg=Decimal("35.00"),
+            allocated_kg=Decimal("35.00"),
             base_price=prod.price,
             tier_30_price=(prod.price * Decimal("0.90")).quantize(Decimal("0.01")),
             tier_80_price=(prod.price * Decimal("0.80")).quantize(Decimal("0.01")),
             tier_100_price=prod.bulk_price,
+            delivery_price_per_km=prod.delivery_price_per_km or Decimal("5.00"),
+            max_delivery_km=prod.max_delivery_km or Decimal("18.00"),
+            reservation_agreed=True,
+            duration_minutes=720,
+            starts_at=datetime.utcnow(),
+            expires_at=datetime.utcnow() + timedelta(hours=12),
             status="active",
-            ends_at=datetime.utcnow() + timedelta(hours=12),
         )
         db.session.add(camp)
         db.session.flush()
