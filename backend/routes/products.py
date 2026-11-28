@@ -1,4 +1,5 @@
 import os
+import requests as http_requests
 from decimal import Decimal
 from datetime import datetime
 from werkzeug.utils import secure_filename
@@ -108,9 +109,30 @@ def upload_image():
         user_id = int(get_jwt_identity())
         user = User.query.get(user_id)
         farmer_folder = f"farmer_{user.farmer_profile.id}" if user and user.farmer_profile else "farmer_general"
+        filename = secure_filename(f"{int(datetime.utcnow().timestamp())}_{file.filename}")
+
+        supabase_url = os.environ.get('SUPABASE_URL', '').rstrip('/')
+        supabase_key = os.environ.get('SUPABASE_SERVICE_KEY', '')
+        if supabase_url and supabase_key:
+            file_bytes = file.read()
+            object_path = f"{farmer_folder}/{filename}"
+            resp = http_requests.post(
+                f"{supabase_url}/storage/v1/object/product-images/{object_path}",
+                headers={
+                    'Authorization': f'Bearer {supabase_key}',
+                    'apikey': supabase_key,
+                    'Content-Type': file.mimetype or 'image/jpeg',
+                    'x-upsert': 'true',
+                },
+                data=file_bytes,
+                timeout=30,
+            )
+            if resp.status_code in (200, 201):
+                image_url = f"{supabase_url}/storage/v1/object/public/product-images/{object_path}"
+                return jsonify({'image_url': image_url, 'message': 'Image uploaded to cloud storage'}), 201
+
         target_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], farmer_folder)
         os.makedirs(target_dir, exist_ok=True)
-        filename = secure_filename(f"{int(datetime.utcnow().timestamp())}_{file.filename}")
         file_path = os.path.join(target_dir, filename)
         file.save(file_path)
         image_url = f"/uploads/{farmer_folder}/{filename}"
