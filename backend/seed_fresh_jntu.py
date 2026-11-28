@@ -462,8 +462,10 @@ def reset_and_seed_fresh():
                 db.session.add(OrderFeedback(
                     order_id=order.id,
                     buyer_id=buyer.id,
+                    overall_rating=5,
                     delivery_rating=5,
-                    freshness_rating=5,
+                    farmer_rating=5,
+                    feedback_tags="Fresh Produce,On Time",
                     comment="On-time farm delivery near JNTU Metro.",
                     created_at=created_dt + timedelta(hours=4),
                 ))
