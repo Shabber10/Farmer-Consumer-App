@@ -285,24 +285,6 @@ const MarketplaceHome = () => {
             <span className="hidden sm:inline text-xs font-bold">{t('filter')}</span>
           </button>
         </div>
-
-        {/* Quick Search Chips */}
-        <div className="w-full max-w-full flex items-center space-x-1.5 overflow-x-auto no-scrollbar py-0.5">
-          {quickChips.map((chip) => (
-            <button
-              key={chip.label}
-              type="button"
-              onClick={() => handleChipClick(chip)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap shadow-2xs ${
-                activeChip === chip.label
-                  ? 'bg-emerald-800 text-white shadow-xs'
-                  : 'bg-white text-gray-700 border border-kisan-border hover:bg-gray-50'
-              }`}
-            >
-              {chip.label}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* ======================================================== */}

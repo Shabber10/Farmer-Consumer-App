@@ -224,6 +224,8 @@ class Product(db.Model):
             'farmer_name': farmer_data.get('farmer_name', 'Local Farmer'),
             'farm_name': farmer_data.get('farm_name', 'Farm Fresh'),
             'farmer_phone': farmer_data.get('mobile_number'),
+            'farmer_latitude': farmer_data.get('latitude'),
+            'farmer_longitude': farmer_data.get('longitude'),
             'farmer_rating': farmer_data.get('farmer_rating', 0.0),
             'farmer_review_count': farmer_data.get('farmer_review_count', 0),
             'category_id': self.category_id,

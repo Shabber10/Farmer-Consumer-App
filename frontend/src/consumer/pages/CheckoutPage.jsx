@@ -403,24 +403,67 @@ const CheckoutPage = () => {
         </div>
       </div>
 
-      {/* 3. Items Summary */}
+      {/* 3. Items & Full Delivery Breakdown */}
       <div className="bg-white rounded-3xl p-5 border border-kisan-border shadow-card space-y-3">
-        <h3 className="font-bold text-sm text-kisan-dark">Order Items ({cart.item_count})</h3>
-        <div className="divide-y divide-gray-100 max-h-48 overflow-y-auto">
-          {cart.items?.map((it) => (
-            <div key={it.id} className="py-2 flex items-center justify-between text-xs">
-              <span className="text-kisan-text font-medium">
-                {getLocalizedProductName(it.product?.name, language)} ({it.quantity} {getLocalizedUnit(it.product?.unit, language)})
-              </span>
-              <span className="font-bold text-kisan-dark">₹{it.subtotal.toFixed(2)}</span>
-            </div>
-          ))}
-        </div>
+        <h3 className="font-bold text-sm text-kisan-dark">Order &amp; Delivery Breakdown ({cart.item_count} items)</h3>
+        {(() => {
+          const selAddr = addresses.find((a) => a.id === selectedAddressId);
+          const calcDistKm = (lat1, lon1, lat2, lon2) => {
+            if ([lat1, lon1, lat2, lon2].some((v) => v === null || v === undefined)) return null;
+            const R = 6371;
+            const dLat = ((lat2 - lat1) * Math.PI) / 180;
+            const dLon = ((lon2 - lon1) * Math.PI) / 180;
+            const a =
+              Math.sin(dLat / 2) ** 2 +
+              Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          };
 
-        <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-sm font-black text-kisan-dark">
-          <span>{t('totalAmount')}</span>
-          <span className="text-lg text-kisan-primary">₹{cart.total_amount.toFixed(2)}</span>
-        </div>
+          return (
+            <>
+              <div className="divide-y divide-gray-100 max-h-56 overflow-y-auto">
+                {cart.items?.map((it) => {
+                  const p = it.product || {};
+                  const distKm = calcDistKm(p.farmer_latitude, p.farmer_longitude, selAddr?.latitude, selAddr?.longitude);
+                  const ratePerKm = Number(p.delivery_price_per_km ?? 0);
+                  return (
+                    <div key={it.id} className="py-2.5 space-y-1 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-kisan-dark font-bold">
+                          {getLocalizedProductName(p.name, language)} ({it.quantity} {getLocalizedUnit(p.unit, language)} × ₹{Number(p.price || it.unit_price || 0).toFixed(2)})
+                        </span>
+                        <span className="font-extrabold text-kisan-dark">₹{Number(it.subtotal || 0).toFixed(2)}</span>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-between text-[11px] text-kisan-muted gap-1">
+                        <span>Farmer: <b className="text-kisan-text">{p.farm_name || p.farmer_name || 'Local Farm'}</b> ({p.location})</span>
+                        <span>
+                          {distKm !== null ? `${distKm.toFixed(1)} km away` : `Max ≤${p.max_delivery_km ?? 15} km`} • ₹{ratePerKm}/km
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="pt-3 border-t border-gray-100 space-y-1.5 text-xs">
+                <div className="flex items-center justify-between text-kisan-muted">
+                  <span>Order Price (Produce Subtotal)</span>
+                  <span className="font-bold text-kisan-dark">₹{Number(cart.subtotal || 0).toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between text-kisan-muted">
+                  <span>Delivery Charge {Number(cart.subtotal || 0) >= 500 ? '(Free ≥ ₹500)' : '(Standard Flat Fee)'}</span>
+                  <span className="font-bold text-emerald-700">
+                    {Number(cart.delivery_fee || 0) === 0 ? 'FREE (₹0.00)' : `₹${Number(cart.delivery_fee || 0).toFixed(2)}`}
+                  </span>
+                </div>
+                <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-sm font-black text-kisan-dark">
+                  <span>{t('totalAmount')}</span>
+                  <span className="text-lg text-kisan-primary">₹{Number(cart.total_amount || 0).toFixed(2)}</span>
+                </div>
+              </div>
+            </>
+          );
+        })()}
       </div>
 
       {/* Place Order CTA */}

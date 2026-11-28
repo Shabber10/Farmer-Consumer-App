@@ -76,6 +76,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    if (typeof window !== 'undefined' && !window.confirm('Are you sure you want to logout?')) {
+      return;
+    }
     setToken(null);
     setUser(null);
     localStorage.removeItem('kd_token');
