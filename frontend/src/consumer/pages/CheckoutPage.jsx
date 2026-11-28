@@ -5,7 +5,7 @@ import { MapPin, CreditCard, Banknote, Smartphone, Check, Plus, AlertCircle, Arr
 import { PINCODE_MANDALS_MAP } from '../../data/pincodeLocations';
 import { useCart } from '../../contexts/CartContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { BackButton, PageBackground } from '../../shared';
+import { BackButton, PageBackground, RapidoMapPicker } from '../../shared';
 import bg8 from '../../assets/images/bg8_hd.jpg';
 import api from '../../services/api';
 import { getLocalizedProductName, getLocalizedUnit } from '../../utils/productLocalization';
@@ -28,12 +28,14 @@ const CheckoutPage = () => {
   const [showAddAddr, setShowAddAddr] = useState(false);
   const [newAddr, setNewAddr] = useState({
     door_number: '',
-    street: '',
-    village: '',
-    district: '',
+    street: 'HITEC City & Madhapur',
+    village: 'Madhapur',
+    district: 'Hyderabad',
     state: 'Telangana',
-    pincode: '',
-    landmark: ''
+    pincode: '500081',
+    landmark: '',
+    latitude: 17.4474,
+    longitude: 78.3762,
   });
 
   useEffect(() => {
@@ -254,64 +256,48 @@ const CheckoutPage = () => {
           ))}
         </div>
 
-        {/* Add Address Form Toggle */}
+        {/* Add Address Form Toggle (Map Auto-Detect + Door/Landmark Only) */}
         {showAddAddr && (
-          <form onSubmit={handleCreateAddress} className="mt-3 p-4 bg-gray-50 rounded-2xl border space-y-2.5 text-xs">
-            <h4 className="font-bold text-kisan-dark">Add New Delivery Location</h4>
-            <div className="grid grid-cols-2 gap-2">
+          <form onSubmit={handleCreateAddress} className="mt-3 p-4 bg-gray-50 rounded-2xl border space-y-3 text-xs">
+            <h4 className="font-bold text-kisan-dark">Pin Delivery Location (Auto-Detects Address)</h4>
+            <RapidoMapPicker
+              initialLat={newAddr.latitude}
+              initialLng={newAddr.longitude}
+              initialTitle={newAddr.street || 'Delivery Location'}
+              initialAddress={[newAddr.village, newAddr.district, newAddr.state, newAddr.pincode].filter(Boolean).join(', ')}
+              initialCity={newAddr.district || 'Hyderabad'}
+              initialPincode={newAddr.pincode || '500081'}
+              pinLabel="Delivery Pin"
+              selectedLabel="Auto-Detected Address"
+              mapHeight="210px"
+              onLocationChange={(loc) => {
+                setNewAddr((prev) => ({
+                  ...prev,
+                  latitude: loc.lat,
+                  longitude: loc.lng,
+                  street: loc.title || loc.address || prev.street,
+                  village: loc.village || loc.title || prev.village,
+                  district: loc.district || prev.district,
+                  state: loc.state || prev.state || 'Telangana',
+                  pincode: loc.pincode || prev.pincode || '500001',
+                }));
+              }}
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <input
                 type="text"
-                placeholder="Door / Flat No."
+                placeholder="Door / Flat No. *"
                 value={newAddr.door_number}
                 onChange={(e) => setNewAddr({ ...newAddr, door_number: e.target.value })}
-                className="p-2 border rounded-xl"
+                className="p-2.5 border rounded-xl bg-white"
                 required
               />
               <input
                 type="text"
-                placeholder="Street / Colony"
-                value={newAddr.street}
-                onChange={(e) => setNewAddr({ ...newAddr, street: e.target.value })}
-                className="p-2 border rounded-xl"
-                required
-              />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <input
-                type="text"
-                placeholder="Village / Colony / Area"
-                value={newAddr.village}
-                onChange={(e) => setNewAddr({ ...newAddr, village: e.target.value })}
-                className="p-2 border rounded-xl text-xs w-full min-w-0"
-                required
-              />
-              <input
-                type="text"
-                placeholder="District / City"
-                value={newAddr.district}
-                onChange={(e) => setNewAddr({ ...newAddr, district: e.target.value })}
-                className="p-2 border rounded-xl text-xs w-full min-w-0"
-                required
-              />
-              <input
-                type="text"
-                maxLength={6}
-                placeholder="6-Digit Pincode"
-                value={newAddr.pincode}
-                onChange={(e) => {
-                  const pin = e.target.value.replace(/\D/g, '');
-                  let dist = newAddr.district;
-                  let vill = newAddr.village;
-                  if (pin.length === 6 && PINCODE_MANDALS_MAP[pin]) {
-                    const m = PINCODE_MANDALS_MAP[pin];
-                    if (m.city) dist = m.city;
-                    if (m.mandals && m.mandals.length > 0 && !newAddr.village) {
-                      vill = m.mandals[0].replace(' Mandal', '');
-                    }
-                  }
-                  setNewAddr({ ...newAddr, pincode: pin, district: dist, village: vill });
-                }}
-                className="p-2 border rounded-xl text-xs w-full min-w-0 font-mono"
+                placeholder="Landmark (e.g. Near Main Gate) *"
+                value={newAddr.landmark}
+                onChange={(e) => setNewAddr({ ...newAddr, landmark: e.target.value })}
+                className="p-2.5 border rounded-xl bg-white"
                 required
               />
             </div>
@@ -327,7 +313,7 @@ const CheckoutPage = () => {
                 type="submit"
                 className="px-4 py-1.5 bg-kisan-primary text-white rounded-xl font-bold"
               >
-                Save & Select
+                Save &amp; Select
               </button>
             </div>
           </form>

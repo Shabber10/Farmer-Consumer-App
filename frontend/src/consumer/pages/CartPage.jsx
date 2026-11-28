@@ -157,7 +157,20 @@ const CartPage = () => {
                   >
                     <Minus className="w-3 h-3" />
                   </button>
-                  <span className="text-xs font-bold w-5 text-center">{item.quantity}</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max={item.product?.available_quantity || 9999}
+                    value={item.quantity}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      if (!Number.isNaN(val) && val >= 1) {
+                        updateQuantity(item.id, Math.min(val, Number(item.product?.available_quantity || val)));
+                      }
+                    }}
+                    className="w-12 text-xs font-bold text-center bg-white border rounded py-0.5 focus:outline-none focus:border-kisan-primary"
+                    aria-label="Quantity"
+                  />
                   <button
                     onClick={() => updateQuantity(item.id, item.quantity + 1)}
                     className="w-6 h-6 rounded bg-white border flex items-center justify-center font-bold text-xs"

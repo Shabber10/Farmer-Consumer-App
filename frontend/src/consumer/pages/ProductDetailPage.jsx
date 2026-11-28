@@ -280,9 +280,20 @@ const ProductDetailPage = () => {
                 >
                   <Minus className="w-3.5 h-3.5" />
                 </button>
-                <span className="font-extrabold text-sm text-kisan-dark w-8 text-center">
-                  {quantity}
-                </span>
+                <input
+                  type="number"
+                  min="1"
+                  max={product.available_quantity || 9999}
+                  value={quantity}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    if (!Number.isNaN(val) && val >= 1) {
+                      setQuantity(Math.min(val, Number(product.available_quantity || val)));
+                    }
+                  }}
+                  className="font-extrabold text-sm text-kisan-dark w-14 text-center bg-white border border-kisan-border rounded-lg py-0.5 focus:outline-none focus:border-kisan-primary"
+                  aria-label="Quantity"
+                />
                 <button
                   onClick={() => setQuantity(Math.min(product.available_quantity, quantity + 1))}
                   className="w-7 h-7 rounded-lg bg-white border flex items-center justify-center font-bold text-kisan-text hover:bg-gray-100"

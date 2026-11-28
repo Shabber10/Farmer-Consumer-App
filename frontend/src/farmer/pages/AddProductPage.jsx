@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
+import { Camera as CapCamera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Upload, Camera, AlertCircle, Users, Truck } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { BackButton } from '../../shared';
@@ -27,6 +29,7 @@ const AddProductPage = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
   const [uploading, setUploading] = useState(false);
+  const cameraInputRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -39,14 +42,11 @@ const AddProductPage = () => {
     });
   }, []);
 
-  const handleFileChange = async (e) => {
-    const file = e.target.files[0];
+  const uploadImageFile = async (file) => {
     if (!file) return;
-
     setSelectedFile(file);
     setImagePreview(URL.createObjectURL(file));
 
-    // Upload immediately
     const uploadData = new FormData();
     uploadData.append('image', file);
 
@@ -58,9 +58,45 @@ const AddProductPage = () => {
       setFormData(prev => ({ ...prev, image_url: res.data.image_url }));
     } catch (err) {
       console.error('Image upload failed:', err);
+      setError('Failed to upload image. Please try again.');
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (file) await uploadImageFile(file);
+  };
+
+  const handleCameraCapture = async () => {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const photo = await CapCamera.getPhoto({
+          quality: 85,
+          allowEditing: false,
+          resultType: CameraResultType.Base64,
+          source: CameraSource.Camera,
+        });
+        if (photo?.base64String) {
+          const byteChars = atob(photo.base64String);
+          const byteNums = new Array(byteChars.length);
+          for (let i = 0; i < byteChars.length; i += 1) {
+            byteNums[i] = byteChars.charCodeAt(i);
+          }
+          const ext = photo.format || 'jpeg';
+          const blob = new Blob([new Uint8Array(byteNums)], { type: `image/${ext}` });
+          const file = new File([blob], `harvest_${Date.now()}.${ext}`, { type: `image/${ext}` });
+          await uploadImageFile(file);
+        }
+      } catch (err) {
+        if (!String(err?.message || '').toLowerCase().includes('cancel')) {
+          cameraInputRef.current?.click();
+        }
+      }
+      return;
+    }
+    cameraInputRef.current?.click();
   };
 
   const handleSubmit = async (e) => {
@@ -149,15 +185,19 @@ const AddProductPage = () => {
         <div>
           <label className="block font-bold text-kisan-text mb-1.5">{t('uploadPhoto')} *</label>
           <div className="border-2 border-dashed border-kisan-border rounded-2xl p-4 text-center hover:border-kisan-primary transition-colors bg-kisan-bg/50 relative overflow-hidden">
+            <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
             {imagePreview ? (
               <div className="relative h-44 rounded-xl overflow-hidden">
                 <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                 <div className="absolute bottom-2 right-2 flex items-center space-x-2">
-                  <label className="bg-emerald-700/90 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg cursor-pointer flex items-center space-x-1">
+                  <button
+                    type="button"
+                    onClick={handleCameraCapture}
+                    className="bg-emerald-700/90 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg cursor-pointer flex items-center space-x-1"
+                  >
                     <Camera className="w-3.5 h-3.5" />
                     <span>Camera</span>
-                    <input type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
-                  </label>
+                  </button>
                   <label className="bg-black/75 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg cursor-pointer flex items-center space-x-1">
                     <Upload className="w-3.5 h-3.5" />
                     <span>Gallery</span>
@@ -172,11 +212,14 @@ const AddProductPage = () => {
                 </div>
                 <span className="font-bold text-kisan-dark text-sm">Capture or upload harvest photograph</span>
                 <div className="flex flex-wrap items-center justify-center gap-2">
-                  <label className="cursor-pointer bg-kisan-primary hover:bg-kisan-dark text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center space-x-1.5 shadow-xs">
+                  <button
+                    type="button"
+                    onClick={handleCameraCapture}
+                    className="cursor-pointer bg-kisan-primary hover:bg-kisan-dark text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center space-x-1.5 shadow-xs"
+                  >
                     <Camera className="w-4 h-4" />
                     <span>Take Photo (Camera)</span>
-                    <input type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
-                  </label>
+                  </button>
                   <label className="cursor-pointer bg-white border border-kisan-border hover:bg-gray-50 text-kisan-dark font-bold text-xs px-4 py-2 rounded-xl flex items-center space-x-1.5 shadow-xs">
                     <Upload className="w-4 h-4" />
                     <span>Choose from Gallery</span>

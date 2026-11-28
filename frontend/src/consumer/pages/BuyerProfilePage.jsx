@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { PasswordInput } from '../../shared';
+import { PasswordInput, RapidoMapPicker } from '../../shared';
 import api from '../../services/api';
 
 const BuyerProfilePage = () => {
@@ -384,41 +384,46 @@ const BuyerProfilePage = () => {
               ))}
 
               {showAddAddr ? (
-                <form onSubmit={handleAddAddress} className="p-3 bg-emerald-50/40 rounded-xl border border-emerald-200 space-y-2 text-xs mt-2">
-                  <p className="font-bold text-emerald-900 text-xs">New Delivery Address</p>
-                  <div className="grid grid-cols-2 gap-2">
+                <form onSubmit={handleAddAddress} className="p-3 bg-emerald-50/40 rounded-xl border border-emerald-200 space-y-2.5 text-xs mt-2">
+                  <p className="font-bold text-emerald-900 text-xs">Pin Location (Auto-Detects Address)</p>
+                  <RapidoMapPicker
+                    initialLat={newAddr.latitude || 17.4474}
+                    initialLng={newAddr.longitude || 78.3762}
+                    initialTitle={newAddr.street || 'Delivery Location'}
+                    initialAddress={[newAddr.village, newAddr.district, newAddr.state, newAddr.pincode].filter(Boolean).join(', ')}
+                    initialCity={newAddr.district || 'Hyderabad'}
+                    initialPincode={newAddr.pincode || '500081'}
+                    pinLabel="Delivery Pin"
+                    selectedLabel="Auto-Detected Address"
+                    mapHeight="200px"
+                    onLocationChange={(loc) => {
+                      setNewAddr((prev) => ({
+                        ...prev,
+                        latitude: loc.lat,
+                        longitude: loc.lng,
+                        street: loc.title || loc.address || prev.street || 'Selected Area',
+                        village: loc.village || loc.title || prev.village || 'Hyderabad',
+                        district: loc.district || prev.district || 'Hyderabad',
+                        state: loc.state || prev.state || 'Telangana',
+                        pincode: loc.pincode || prev.pincode || '500001',
+                      }));
+                    }}
+                  />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <input
                       type="text"
-                      placeholder="Door / Flat No."
+                      placeholder="Door / Flat No. *"
                       value={newAddr.door_number}
                       onChange={(e) => setNewAddr({ ...newAddr, door_number: e.target.value })}
-                      className="p-1.5 border rounded-lg text-xs bg-white"
+                      className="p-2 border rounded-lg text-xs bg-white"
                       required
                     />
                     <input
                       type="text"
-                      placeholder="Street / Area"
-                      value={newAddr.street}
-                      onChange={(e) => setNewAddr({ ...newAddr, street: e.target.value })}
-                      className="p-1.5 border rounded-lg text-xs bg-white"
-                      required
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="text"
-                      placeholder="Town / City"
-                      value={newAddr.village}
-                      onChange={(e) => setNewAddr({ ...newAddr, village: e.target.value })}
-                      className="p-1.5 border rounded-lg text-xs bg-white"
-                      required
-                    />
-                    <input
-                      type="text"
-                      placeholder="Pincode"
-                      value={newAddr.pincode}
-                      onChange={(e) => setNewAddr({ ...newAddr, pincode: e.target.value })}
-                      className="p-1.5 border rounded-lg text-xs bg-white"
+                      placeholder="Landmark (e.g. Near Main Gate) *"
+                      value={newAddr.landmark}
+                      onChange={(e) => setNewAddr({ ...newAddr, landmark: e.target.value })}
+                      className="p-2 border rounded-lg text-xs bg-white"
                       required
                     />
                   </div>

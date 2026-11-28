@@ -49,13 +49,13 @@ const MyOrdersPage = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8 space-y-6 pb-24 md:pb-8">
+    <div className="w-full max-w-4xl min-w-0 overflow-x-hidden mx-auto px-3 sm:px-4 py-5 space-y-4 pb-24 md:pb-8">
       <div>
-        <BackButton fallbackPath="/buyer" label="Back to Marketplace" className="mb-4" />
+        <BackButton fallbackPath="/buyer" label="Back to Marketplace" className="mb-2" />
       </div>
-      <div>
-        <h1 className="text-2xl font-extrabold text-kisan-dark">{t('myOrders')}</h1>
-        <p className="text-xs text-kisan-muted">Track your deliveries and review farm harvest purchases</p>
+      <div className="min-w-0">
+        <h1 className="text-xl sm:text-2xl font-extrabold text-kisan-dark">{t('myOrders')}</h1>
+        <p className="text-xs text-kisan-muted">Tap any order to view status, timeline &amp; details</p>
       </div>
 
       {loading ? (

@@ -1,7 +1,7 @@
 {
   "name": "farmer-consumer-app",
   "private": true,
-  "version": "1.7.0",
+  "version": "1.8.0",
   "type": "module",
   "scripts": {
     "dev": "vite --port 3001",
@@ -11,6 +11,7 @@
   "dependencies": {
     "@capacitor/android": "^8.6.2",
     "@capacitor/app": "^8.1.2",
+    "@capacitor/camera": "^8.2.7",
     "@capacitor/cli": "^8.6.2",
     "@capacitor/core": "^8.6.2",
     "@capacitor/geolocation": "^8.2.5",

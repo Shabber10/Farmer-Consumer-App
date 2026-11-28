@@ -158,9 +158,21 @@ const ProductCard = ({ product, onQuickAdd, shoppingMode = 'community' }) => {
               >
                 <Minus className="w-3 h-3 stroke-[2.5]" />
               </button>
-              <span className="px-1.5 text-xs font-black text-white select-none min-w-[16px] text-center">
-                {cartQty}
-              </span>
+              <input
+                type="number"
+                min="1"
+                max={product.available_quantity || 9999}
+                value={cartQty}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  if (!Number.isNaN(val) && val >= 1 && cartItem) {
+                    updateQuantity(cartItem.id, Math.min(val, Number(product.available_quantity || val)));
+                  }
+                }}
+                className="w-10 bg-emerald-800/60 text-white text-xs font-black text-center focus:outline-none py-0.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                aria-label="Quantity"
+              />
               <button
                 type="button"
                 onClick={handleIncrement}
