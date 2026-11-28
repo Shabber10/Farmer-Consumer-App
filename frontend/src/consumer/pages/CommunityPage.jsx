@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Users, Building2, Copy, Check, Share2, Clock, Star,
-  Plus, MapPin, ShoppingBag, Sparkles, ArrowRight
+  Plus, MapPin, ShoppingBag, Sparkles, ArrowRight, Banknote, CreditCard, CheckCircle2
 } from 'lucide-react';
 import api, { getImageUrl } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 import { BackButton, PageBackground } from '../../shared';
 import bg6 from '../../assets/images/bg6_hd.jpg';
 import CommunityJoinCreateModal from '../components/CommunityJoinCreateModal';
@@ -21,6 +22,7 @@ const formatCountdown = (expiresAtIso) => {
 };
 
 const CommunityPage = () => {
+  const { user } = useAuth();
   const [data, setData] = useState({ community: null, membership: null, orders: [], members: [] });
   const [loading, setLoading] = useState(true);
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -82,6 +84,34 @@ const CommunityPage = () => {
       await fetchMyCommunity();
     } catch (err) {
       alert(err.response?.data?.error || 'Could not add quantity.');
+    } finally {
+      setSubmittingOrderId(null);
+    }
+  };
+
+  const handleCompleteAndDistribute = async (orderId) => {
+    setSubmittingOrderId(orderId);
+    try {
+      const res = await api.post(`/api/communities/orders/${orderId}/complete-and-distribute`);
+      setToast(res.data.message || 'Final price distributed to all members!');
+      setTimeout(() => setToast(''), 3000);
+      await fetchMyCommunity();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Could not complete and distribute pool.');
+    } finally {
+      setSubmittingOrderId(null);
+    }
+  };
+
+  const handlePayShare = async (orderId, paymentMethod) => {
+    setSubmittingOrderId(orderId);
+    try {
+      const res = await api.post(`/api/communities/orders/${orderId}/pay-share`, { payment_method: paymentMethod });
+      setToast(res.data.message || 'Payment preference saved!');
+      setTimeout(() => setToast(''), 3000);
+      await fetchMyCommunity();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Could not update payment choice.');
     } finally {
       setSubmittingOrderId(null);
     }
@@ -203,11 +233,20 @@ const CommunityPage = () => {
           {/* Community Group Orders Feed */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-extrabold text-kisan-dark">Community Orders & Live Deals</h2>
+              <h2 className="text-base font-extrabold text-kisan-dark">
+                Community Orders &amp; Live Deals ({visibleOrders.length} items)
+              </h2>
               <Link to="/buyer/cart" className="text-xs font-bold text-kisan-primary flex items-center space-x-1 hover:underline">
                 <ShoppingBag className="w-3.5 h-3.5" />
                 <span>Push from Cart</span>
               </Link>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-3 text-[11px] text-blue-900 flex items-center space-x-2">
+              <Banknote className="w-4 h-4 text-blue-700 flex-shrink-0" />
+              <span>
+                <b>Apartment COD Policy:</b> No upfront payment when joining. Once the community pool completes, the final discounted price is distributed to each neighbor—then pay in-app or by cash (COD).
+              </span>
             </div>
 
             {visibleOrders.length === 0 ? (
@@ -228,6 +267,13 @@ const CommunityPage = () => {
               visibleOrders.map((order) => {
                 const countdown = order.expires_at ? formatCountdown(order.expires_at) : null;
                 const isExpired = Boolean(order.expires_at && countdown === 'Ended');
+                const purchasedCount = order.purchased_members_count ?? order.participants_count ?? 0;
+                const totalMembers = order.total_members_count || community?.members_count || members.length || 1;
+                const myItems = (order.items || []).filter((it) => it.user_id === user?.id);
+                const myQty = myItems.reduce((s, it) => s + Number(it.quantity_kg || 0), 0);
+                const lockedPrice = order.final_unit_price ?? order.effective_price;
+                const myPayable = Number((myQty * Number(lockedPrice || 0)).toFixed(2));
+                const myPayStatus = myItems[0]?.payment_status || 'pending_cod';
                 return (
                   <div key={order.id} className="bg-white rounded-3xl p-4 border border-kisan-border shadow-card space-y-3">
                     <div className="flex items-start justify-between gap-3">
@@ -299,38 +345,110 @@ const CommunityPage = () => {
                       </div>
                     </div>
 
+                    {/* Neighbors Purchased Counter */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs">
+                      <span className="font-bold text-kisan-dark flex items-center space-x-1.5">
+                        <Users className="w-3.5 h-3.5 text-kisan-primary" />
+                        <span>{purchasedCount} / {totalMembers} people purchased</span>
+                      </span>
+                      <span className="text-[11px] font-semibold text-kisan-muted">
+                        COD until pool completes
+                      </span>
+                    </div>
+
                     {/* Contribute Qty Control */}
-                    {['open_demand', 'campaign_active'].includes(order.status) && (
-                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                        <span className="text-[11px] text-kisan-muted">
-                          {order.participants_count} neighbor(s) joined • Community share: {order.community_qty_kg} {order.unit}
-                        </span>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="number"
-                            min="1"
-                            step="1"
-                            disabled={isExpired}
-                            value={addQtyMap[order.id] ?? 2}
-                            onChange={(e) => setAddQtyMap({ ...addQtyMap, [order.id]: e.target.value })}
-                            className="w-16 px-2 py-1.5 text-xs font-bold text-center border border-kisan-border rounded-xl disabled:opacity-50"
-                          />
+                    {['open_demand', 'campaign_active'].includes(order.status) && !order.price_distributed && (
+                      <div className="space-y-2 pt-1">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="text-[11px] text-kisan-muted">
+                            Community share: {order.community_qty_kg} {order.unit}
+                          </span>
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="number"
+                              min="1"
+                              step="1"
+                              disabled={isExpired}
+                              value={addQtyMap[order.id] ?? 2}
+                              onChange={(e) => setAddQtyMap({ ...addQtyMap, [order.id]: e.target.value })}
+                              className="w-16 px-2 py-1.5 text-xs font-bold text-center border border-kisan-border rounded-xl disabled:opacity-50"
+                            />
+                            <button
+                              type="button"
+                              disabled={submittingOrderId === order.id || isExpired}
+                              onClick={() => handleContribute(order.id)}
+                              className="px-3.5 py-2 bg-kisan-primary hover:bg-kisan-dark text-white text-xs font-bold rounded-xl flex items-center space-x-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>
+                                {isExpired
+                                  ? 'Timer Ended'
+                                  : submittingOrderId === order.id
+                                    ? 'Adding...'
+                                    : `Add ${order.unit}`}
+                              </span>
+                            </button>
+                          </div>
+                        </div>
+                        {purchasedCount > 0 && (
                           <button
                             type="button"
-                            disabled={submittingOrderId === order.id || isExpired}
-                            onClick={() => handleContribute(order.id)}
-                            className="px-3.5 py-2 bg-kisan-primary hover:bg-kisan-dark text-white text-xs font-bold rounded-xl flex items-center space-x-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={submittingOrderId === order.id}
+                            onClick={() => handleCompleteAndDistribute(order.id)}
+                            className="w-full py-2 bg-emerald-50 hover:bg-emerald-100 text-kisan-primary border border-emerald-200 text-xs font-bold rounded-xl transition-all"
                           >
-                            <Plus className="w-3.5 h-3.5" />
-                            <span>
-                              {isExpired
-                                ? 'Timer Ended'
-                                : submittingOrderId === order.id
-                                  ? 'Adding...'
-                                  : `Add ${order.unit}`}
-                            </span>
+                            Complete Pool &amp; Distribute Final Price (₹{order.effective_price}/{order.unit})
                           </button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Distributed Price Share & Payment Options (Post-Completion Only) */}
+                    {(order.price_distributed || order.status === 'completed') && (
+                      <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 space-y-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="font-extrabold text-emerald-950 flex items-center space-x-1">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+                            <span>Final Price Distributed: ₹{lockedPrice}/{order.unit}</span>
+                          </span>
+                          {myQty > 0 && (
+                            <span className="font-black text-kisan-primary">
+                              Your Share ({myQty} {order.unit}): ₹{myPayable.toFixed(2)}
+                            </span>
+                          )}
                         </div>
+                        {myQty > 0 && (
+                          myPayStatus === 'paid' ? (
+                            <p className="text-[11px] font-bold text-emerald-800">
+                              Paid in App — Thank you!
+                            </p>
+                          ) : myPayStatus === 'cod_confirmed' ? (
+                            <p className="text-[11px] font-bold text-emerald-800">
+                              Cash on Delivery (COD) Confirmed — Pay ₹{myPayable.toFixed(2)} at apartment drop-off.
+                            </p>
+                          ) : (
+                            <div className="flex flex-wrap gap-2 pt-1">
+                              <button
+                                type="button"
+                                disabled={submittingOrderId === order.id}
+                                onClick={() => handlePayShare(order.id, 'ONLINE')}
+                                className="flex-1 py-2 px-3 bg-kisan-primary hover:bg-kisan-dark text-white font-bold rounded-xl flex items-center justify-center space-x-1.5"
+                              >
+                                <CreditCard className="w-3.5 h-3.5" />
+                                <span>Pay in App (₹{myPayable.toFixed(2)})</span>
+                              </button>
+                              <button
+                                type="button"
+                                disabled={submittingOrderId === order.id}
+                                onClick={() => handlePayShare(order.id, 'COD')}
+                                className="flex-1 py-2 px-3 bg-white hover:bg-gray-50 text-kisan-dark border border-emerald-300 font-bold rounded-xl flex items-center justify-center space-x-1.5"
+                              >
+                                <Banknote className="w-3.5 h-3.5" />
+                                <span>Pay Cash (COD)</span>
+                              </button>
+                            </div>
+                          )
+                        )}
                       </div>
                     )}
                   </div>

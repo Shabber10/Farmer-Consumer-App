@@ -19,7 +19,7 @@ const MobileHeader = ({ title, showBack = false }) => {
   const [showNotifs, setShowNotifs] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated || role !== 'buyer') return;
+    if (!isAuthenticated || !['buyer', 'farmer'].includes(role)) return;
     let active = true;
     const fetchNotifs = async () => {
       try {
@@ -108,7 +108,7 @@ const MobileHeader = ({ title, showBack = false }) => {
         </div>
 
         <div className="flex items-center justify-end space-x-1.5 flex-shrink-0">
-          {isAuthenticated && role === 'buyer' && (
+          {isAuthenticated && ['buyer', 'farmer'].includes(role) && (
             <button
               type="button"
               onClick={() => setShowNotifs((v) => !v)}
@@ -135,10 +135,12 @@ const MobileHeader = ({ title, showBack = false }) => {
         </div>
       </div>
 
-      {showNotifs && isAuthenticated && role === 'buyer' && (
+      {showNotifs && isAuthenticated && ['buyer', 'farmer'].includes(role) && (
         <div className="max-w-md ml-auto mt-2 bg-white rounded-2xl border border-kisan-border shadow-xl p-3 space-y-2 text-left">
           <div className="flex items-center justify-between pb-1.5 border-b border-gray-100">
-            <span className="text-xs font-extrabold text-kisan-dark">Apartment &amp; Order Alerts</span>
+            <span className="text-xs font-extrabold text-kisan-dark">
+              {role === 'farmer' ? 'Farm Order & Campaign Alerts' : 'Apartment & Order Alerts'}
+            </span>
             <div className="flex items-center space-x-2">
               {unreadCount > 0 && (
                 <button type="button" onClick={handleMarkAllRead} className="text-[10px] font-bold text-kisan-primary">
@@ -164,7 +166,7 @@ const MobileHeader = ({ title, showBack = false }) => {
                       api.patch(`/api/notifications/${n.id}/read`).catch(() => {});
                       setUnreadCount((c) => Math.max(0, c - 1));
                     }
-                    navigate('/buyer/community');
+                    navigate(role === 'farmer' ? '/farmer/orders' : '/buyer/community');
                   }}
                   className={`w-full text-left py-2 px-1.5 rounded-lg ${n.is_read ? 'opacity-70' : 'bg-emerald-50/60'}`}
                 >

@@ -1,11 +1,54 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ShoppingBag, MapPin, Phone, Search, SlidersHorizontal, X, Loader2, Check } from 'lucide-react';
+import { ShoppingBag, MapPin, Phone, Search, SlidersHorizontal, X, Loader2, Check, Navigation, KeyRound, PackageCheck } from 'lucide-react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { PageBackground } from '../../shared';
 import bg7 from '../../assets/images/bg7_hd.jpg';
 import api from '../../services/api';
 
-const ORDER_STATUSES = ['All', 'Pending', 'Accepted', 'Preparing', 'Ready for Dispatch', 'Completed', 'Cancelled'];
+const ORDER_STATUSES = ['All', 'Confirmed', 'Packed', 'Delivered', 'Completed', 'Cancelled'];
+
+const MiniDeliveryMap = ({ lat, lng, address }) => {
+  const mapRef = useRef(null);
+  const instanceRef = useRef(null);
+
+  useEffect(() => {
+    if (!mapRef.current || lat == null || lng == null) return;
+    if (instanceRef.current) {
+      instanceRef.current.remove();
+      instanceRef.current = null;
+    }
+    const map = L.map(mapRef.current, {
+      center: [lat, lng],
+      zoom: 15,
+      zoomControl: false,
+      attributionControl: false,
+      dragging: false,
+      scrollWheelZoom: false,
+    });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+    L.circleMarker([lat, lng], {
+      radius: 8,
+      color: '#14532d',
+      fillColor: '#16a34a',
+      fillOpacity: 0.95,
+      weight: 3,
+    })
+      .addTo(map)
+      .bindPopup(address || 'Delivery Location');
+    instanceRef.current = map;
+    return () => {
+      if (instanceRef.current) {
+        instanceRef.current.remove();
+        instanceRef.current = null;
+      }
+    };
+  }, [lat, lng, address]);
+
+  if (lat == null || lng == null) return null;
+  return <div ref={mapRef} className="w-full h-36 rounded-xl border border-emerald-200 overflow-hidden z-0" />;
+};
 
 const FarmerOrders = () => {
   const { t } = useLanguage();
@@ -16,6 +59,8 @@ const FarmerOrders = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [updatingId, setUpdatingId] = useState(null);
+  const [otpInputs, setOtpInputs] = useState({});
+  const [otpErrors, setOtpErrors] = useState({});
 
   // Pull-to-refresh touch tracking
   const [pullDistance, setPullDistance] = useState(0);
@@ -68,13 +113,19 @@ const FarmerOrders = () => {
     touchStartYRef.current = null;
   };
 
-  const handleUpdateStatus = async (orderId, newStatus) => {
+  const handleUpdateStatus = async (orderId, newStatus, otp = '') => {
     try {
       setUpdatingId(orderId);
-      await api.patch(`/api/farmer/orders/${orderId}/status`, { status: newStatus });
+      setOtpErrors((prev) => ({ ...prev, [orderId]: '' }));
+      await api.patch(`/api/farmer/orders/${orderId}/status`, { status: newStatus, otp });
       await fetchOrders();
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to update order status');
+      const msg = err.response?.data?.error || 'Failed to update order status';
+      if (newStatus === 'Delivered' || newStatus === 'Completed') {
+        setOtpErrors((prev) => ({ ...prev, [orderId]: msg }));
+      } else {
+        alert(msg);
+      }
     } finally {
       setUpdatingId(null);
     }
@@ -252,8 +303,9 @@ const FarmerOrders = () => {
                       {order.order_number || `ORD-${order.id}`}
                     </span>
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      order.status === 'Completed' ? 'bg-emerald-100 text-emerald-800' :
+                      ['Completed', 'Delivered'].includes(order.status) ? 'bg-emerald-100 text-emerald-800' :
                       order.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
+                      order.status === 'Packed' ? 'bg-blue-100 text-blue-800' :
                       'bg-amber-100 text-amber-800'
                     }`}>
                       {order.status}
@@ -272,25 +324,47 @@ const FarmerOrders = () => {
                 </div>
               </div>
 
-              {/* Buyer & Address Details */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-3 text-xs bg-kisan-bg/50 rounded-xl p-3 my-3">
-                <div>
-                  <span className="text-kisan-muted font-bold block mb-0.5">Buyer Information</span>
-                  <p className="font-semibold text-kisan-dark">{order.buyer_name}</p>
-                  {order.buyer_phone && (
-                    <p className="text-kisan-muted flex items-center mt-0.5">
-                      <Phone className="w-3 h-3 mr-1" />
-                      {order.buyer_phone}
+              {/* Buyer & Address Details + Map */}
+              <div className="space-y-3 py-3 text-xs bg-kisan-bg/50 rounded-xl p-3 my-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-kisan-muted font-bold block mb-0.5">Buyer Information</span>
+                    <p className="font-semibold text-kisan-dark">{order.buyer_name}</p>
+                    {order.buyer_phone && (
+                      <p className="text-kisan-muted flex items-center mt-0.5">
+                        <Phone className="w-3 h-3 mr-1" />
+                        {order.buyer_phone}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <span className="text-kisan-muted font-bold block mb-0.5">Delivery Location</span>
+                    <p className="text-kisan-text flex items-start">
+                      <MapPin className="w-3.5 h-3.5 text-kisan-primary mr-1 flex-shrink-0 mt-0.5" />
+                      <span>{order.delivery_address || 'Address provided at checkout'}</span>
                     </p>
-                  )}
+                    <a
+                      href={
+                        order.delivery_latitude != null && order.delivery_longitude != null
+                          ? `https://www.google.com/maps/dir/?api=1&destination=${order.delivery_latitude},${order.delivery_longitude}`
+                          : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.delivery_address || 'Hyderabad')}`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center space-x-1.5 mt-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-xl shadow-xs"
+                    >
+                      <Navigation className="w-3.5 h-3.5" />
+                      <span>Open in Google Maps</span>
+                    </a>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-kisan-muted font-bold block mb-0.5">Delivery Location</span>
-                  <p className="text-kisan-text flex items-start">
-                    <MapPin className="w-3.5 h-3.5 text-kisan-primary mr-1 flex-shrink-0 mt-0.5" />
-                    <span>{order.delivery_address || 'Address provided at checkout'}</span>
-                  </p>
-                </div>
+                {order.delivery_latitude != null && order.delivery_longitude != null && (
+                  <MiniDeliveryMap
+                    lat={order.delivery_latitude}
+                    lng={order.delivery_longitude}
+                    address={order.delivery_address}
+                  />
+                )}
               </div>
 
               {/* Ordered Items */}
@@ -308,55 +382,61 @@ const FarmerOrders = () => {
                 ))}
               </div>
 
-              {/* Status Action Buttons */}
-              <div className="mt-4 pt-3 border-t border-gray-100 flex flex-wrap items-center justify-end gap-2">
-                {order.status === 'Pending' && (
-                  <>
+              {/* Status Action Buttons: Confirmed -> Pack Order -> Demo OTP Delivery */}
+              <div className="mt-4 pt-3 border-t border-gray-100 space-y-2.5">
+                {['Confirmed', 'Pending', 'Accepted'].includes(order.status) && (
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg">
+                      Order Confirmed by System — Ready to Pack
+                    </span>
                     <button
-                      onClick={() => handleUpdateStatus(order.id, 'Cancelled')}
+                      type="button"
+                      onClick={() => handleUpdateStatus(order.id, 'Packed')}
                       disabled={updatingId === order.id}
-                      className="px-3 py-1.5 text-xs font-bold text-kisan-danger hover:bg-red-50 rounded-xl border border-red-200"
+                      className="px-4 py-2 text-xs font-bold bg-kisan-primary text-white rounded-xl hover:bg-kisan-dark shadow-sm flex items-center space-x-1.5"
                     >
-                      Reject
+                      <PackageCheck className="w-4 h-4" />
+                      <span>{updatingId === order.id ? 'Packing...' : 'Pack Order'}</span>
                     </button>
-                    <button
-                      onClick={() => handleUpdateStatus(order.id, 'Accepted')}
-                      disabled={updatingId === order.id}
-                      className="px-4 py-1.5 text-xs font-bold bg-kisan-primary text-white rounded-xl hover:bg-kisan-dark shadow-sm"
-                    >
-                      Accept Order
-                    </button>
-                  </>
+                  </div>
                 )}
 
-                {order.status === 'Accepted' && (
-                  <button
-                    onClick={() => handleUpdateStatus(order.id, 'Preparing')}
-                    disabled={updatingId === order.id}
-                    className="px-4 py-1.5 text-xs font-bold bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-sm"
-                  >
-                    Start Preparing Harvest
-                  </button>
-                )}
-
-                {order.status === 'Preparing' && (
-                  <button
-                    onClick={() => handleUpdateStatus(order.id, 'Ready for Dispatch')}
-                    disabled={updatingId === order.id}
-                    className="px-4 py-1.5 text-xs font-bold bg-purple-600 text-white rounded-xl hover:bg-purple-700 shadow-sm"
-                  >
-                    Mark Ready for Dispatch
-                  </button>
-                )}
-
-                {order.status === 'Ready for Dispatch' && (
-                  <button
-                    onClick={() => handleUpdateStatus(order.id, 'Completed')}
-                    disabled={updatingId === order.id}
-                    className="px-4 py-1.5 text-xs font-bold bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 shadow-sm"
-                  >
-                    Mark Delivered (Completed)
-                  </button>
+                {['Packed', 'Preparing', 'Ready for Dispatch'].includes(order.status) && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3 space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center space-x-1.5 text-xs font-extrabold text-amber-950">
+                        <KeyRound className="w-4 h-4 text-amber-700" />
+                        <span>Demo Delivery OTP:</span>
+                        <span className="px-2 py-0.5 rounded-lg bg-white border border-amber-300 font-mono text-sm tracking-widest text-kisan-dark">
+                          {order.delivery_otp || '1234'}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-amber-800 font-semibold">
+                        Enter OTP from customer to complete delivery
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        type="text"
+                        maxLength={6}
+                        placeholder="Enter 4-digit OTP"
+                        value={otpInputs[order.id] || ''}
+                        onChange={(e) => setOtpInputs({ ...otpInputs, [order.id]: e.target.value })}
+                        className="w-36 px-3 py-2 text-xs font-mono font-bold bg-white border border-amber-300 rounded-xl focus:outline-none focus:border-kisan-primary"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateStatus(order.id, 'Delivered', otpInputs[order.id] || '')}
+                        disabled={updatingId === order.id}
+                        className="px-4 py-2 text-xs font-bold bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 shadow-sm"
+                      >
+                        {updatingId === order.id ? 'Verifying...' : 'Verify OTP & Mark Delivered'}
+                      </button>
+                    </div>
+                    {otpErrors[order.id] && (
+                      <p className="text-[11px] font-bold text-red-600">{otpErrors[order.id]}</p>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

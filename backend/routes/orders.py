@@ -1,4 +1,5 @@
 import uuid
+import random
 from datetime import datetime
 from decimal import Decimal
 from collections import defaultdict
@@ -73,7 +74,7 @@ def place_order():
             delivery_fee=delivery_fee,
             total_amount=total_amount,
             payment_status=initial_pay_status,
-            order_status='Pending',
+            order_status='Confirmed',
             payment_method=payment_method
         )
         db.session.add(order)
@@ -86,7 +87,8 @@ def place_order():
                 order_id=order.id,
                 farmer_id=farmer_id,
                 subtotal=f_subtotal,
-                status='Pending'
+                status='Confirmed',
+                delivery_otp=str(random.randint(1000, 9999)),
             )
             db.session.add(farmer_order)
             db.session.flush()
@@ -176,8 +178,8 @@ def cancel_order(order_id):
     if not order:
         return jsonify({'error': 'Order not found'}), 404
 
-    if order.order_status != 'Pending':
-        return jsonify({'error': f'Cannot cancel order in {order.order_status} state. Only Pending orders can be cancelled.'}), 400
+    if order.order_status not in ('Pending', 'Confirmed'):
+        return jsonify({'error': f'Cannot cancel order in {order.order_status} state. Only Pending or Confirmed orders can be cancelled.'}), 400
 
     try:
         # Restore inventory

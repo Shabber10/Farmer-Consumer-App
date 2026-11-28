@@ -338,8 +338,37 @@ def reset_and_seed_fresh():
         db.session.flush()
         for target_comm in communities[c_i * 2:(c_i * 2) + 3]:
             db.session.add(CampaignTargetCommunity(campaign_id=camp.id, community_id=target_comm.id))
+            co = CommunityOrder(
+                community_id=target_comm.id,
+                campaign_id=camp.id,
+                product_id=prod.id,
+                initiated_by_user_id=target_comm.admin_user_id,
+                title_note=f"Live JNTU Apartment Pool for {prod.name} (COD until completion)",
+                target_qty_kg=camp.total_stock_kg,
+                current_qty_kg=Decimal("35.00"),
+                status="campaign_active",
+                expires_at=datetime.utcnow() + timedelta(hours=12),
+            )
+            db.session.add(co)
+            db.session.flush()
+            comm_members = CommunityMember.query.filter_by(community_id=target_comm.id, status="active").limit(3).all()
+            for m_idx, cm in enumerate(comm_members):
+                db.session.add(CommunityOrderItem(
+                    community_order_id=co.id,
+                    user_id=cm.user_id,
+                    quantity_kg=Decimal(str(10 + m_idx * 5)),
+                    delivery_landmark=f"{cm.block_name or 'Tower A'} {cm.flat_number or ''}".strip(),
+                    contact_phone=cm.user.mobile_number if cm.user else "",
+                    payment_status="pending_cod",
+                    payment_method="COD",
+                ))
+                db.session.add(Notification(
+                    user_id=cm.user_id,
+                    title=f"Live Apartment Deal: {prod.name}",
+                    message=f"Join {target_comm.name} group pool before timer ends to unlock ₹{float(prod.bulk_price):.0f}/{prod.unit}!",
+                ))
 
-    # 8. Seed sample completed & pending Orders + ProductReviews + CommunityReviews
+    # 8. Seed sample completed & confirmed Orders + ProductReviews + CommunityReviews
     for o_i in range(5):
         buyer = buyers[o_i]
         addr = buyer_addresses[o_i]
@@ -349,7 +378,7 @@ def reset_and_seed_fresh():
         deliv = Decimal("0.00") if sub >= Decimal("500.00") else Decimal("40.00")
         tot = sub + deliv
         ord_num = f"KD-{today.strftime('%Y%m%d')}-FR{o_i + 1:04d}"
-        status = "Delivered" if o_i < 3 else "Pending"
+        status = "Delivered" if o_i < 3 else "Confirmed"
 
         order = Order(
             order_number=ord_num,
@@ -370,9 +399,16 @@ def reset_and_seed_fresh():
             farmer_id=prod.farmer_id,
             subtotal=sub,
             status=status,
+            delivery_otp=str(1234 + o_i * 1111),
         )
         db.session.add(fo)
         db.session.flush()
+
+        db.session.add(Notification(
+            user_id=prod.farmer.user_id,
+            title=f"Order {status}: {ord_num}",
+            message=f"{buyer.full_name} ordered {float(qty)} {prod.unit} of {prod.name} (₹{float(sub):.2f}).",
+        ))
 
         db.session.add(OrderItem(
             order_id=order.id,

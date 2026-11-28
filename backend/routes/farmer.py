@@ -1,3 +1,4 @@
+import random
 from decimal import Decimal
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
@@ -7,10 +8,13 @@ from backend.models import FarmerProfile, Product, FarmerOrder, Order, OrderItem
 farmer_bp = Blueprint('farmer', __name__)
 
 VALID_STATUS_TRANSITIONS = {
-    'Pending': ['Accepted', 'Cancelled'],
-    'Accepted': ['Preparing', 'Cancelled'],
-    'Preparing': ['Ready for Dispatch', 'Cancelled'],
-    'Ready for Dispatch': ['Completed'],
+    'Confirmed': ['Packed', 'Cancelled'],
+    'Packed': ['Delivered', 'Completed'],
+    'Delivered': [],
+    'Pending': ['Accepted', 'Packed', 'Cancelled'],
+    'Accepted': ['Preparing', 'Packed', 'Cancelled'],
+    'Preparing': ['Ready for Dispatch', 'Packed', 'Cancelled'],
+    'Ready for Dispatch': ['Delivered', 'Completed'],
     'Completed': [],
     'Cancelled': []
 }
@@ -36,10 +40,10 @@ def get_dashboard():
 
     all_orders = FarmerOrder.query.filter_by(farmer_id=farmer.id).all()
     total_orders = len(all_orders)
-    pending_orders = sum(1 for o in all_orders if o.status in ['Pending', 'Accepted', 'Preparing'])
+    pending_orders = sum(1 for o in all_orders if o.status in ['Confirmed', 'Packed', 'Pending', 'Accepted', 'Preparing', 'Ready for Dispatch'])
 
-    total_earnings = sum(float(o.subtotal) for o in all_orders if o.status == 'Completed')
-    pending_earnings = sum(float(o.subtotal) for o in all_orders if o.status not in ['Completed', 'Cancelled'])
+    total_earnings = sum(float(o.subtotal) for o in all_orders if o.status in ['Completed', 'Delivered'])
+    pending_earnings = sum(float(o.subtotal) for o in all_orders if o.status not in ['Completed', 'Delivered', 'Cancelled'])
 
     recent_orders = FarmerOrder.query.filter_by(farmer_id=farmer.id)\
         .order_by(FarmerOrder.created_at.desc()).limit(5).all()
@@ -82,6 +86,13 @@ def get_farmer_orders():
         query = query.filter_by(status=status_filter)
 
     orders = query.order_by(FarmerOrder.created_at.desc()).all()
+    dirty = False
+    for o in orders:
+        if not o.delivery_otp:
+            o.delivery_otp = str(random.randint(1000, 9999))
+            dirty = True
+    if dirty:
+        db.session.commit()
     return jsonify({'orders': [o.to_dict() for o in orders]}), 200
 
 @farmer_bp.route('/orders/<int:order_id>/status', methods=['PATCH'])
@@ -108,15 +119,22 @@ def update_order_status(order_id):
             'error': f'Invalid status transition from {farmer_order.status} to {new_status}. Allowed: {allowed_transitions}'
         }), 400
 
+    if new_status in ('Delivered', 'Completed') and farmer_order.delivery_otp:
+        provided_otp = str(data.get('otp') or '').strip()
+        if provided_otp != str(farmer_order.delivery_otp):
+            return jsonify({'error': 'Invalid Delivery OTP. Please enter the 4-digit OTP shown on screen.'}), 400
+
     farmer_order.status = new_status
 
     # Notify buyer of status update
     parent_order = farmer_order.order
     if parent_order:
-        # Check if all sub-orders are completed
-        all_completed = all(fo.status == 'Completed' for fo in parent_order.farmer_orders)
+        # Check if all sub-orders are completed/delivered
+        all_completed = all(fo.status in ('Completed', 'Delivered') for fo in parent_order.farmer_orders)
         if all_completed:
-            parent_order.order_status = 'Completed'
+            parent_order.order_status = 'Delivered' if new_status == 'Delivered' else 'Completed'
+            if parent_order.payment_method == 'COD':
+                parent_order.payment_status = 'Successful'
         elif new_status == 'Cancelled' and all(fo.status == 'Cancelled' for fo in parent_order.farmer_orders):
             parent_order.order_status = 'Cancelled'
         else:
@@ -143,8 +161,8 @@ def get_earnings():
     orders = FarmerOrder.query.filter_by(farmer_id=farmer.id).order_by(FarmerOrder.created_at.desc()).all()
 
     total_sales = sum(float(o.subtotal) for o in orders)
-    completed_revenue = sum(float(o.subtotal) for o in orders if o.status == 'Completed')
-    pending_revenue = sum(float(o.subtotal) for o in orders if o.status in ['Pending', 'Accepted', 'Preparing', 'Ready for Dispatch'])
+    completed_revenue = sum(float(o.subtotal) for o in orders if o.status in ['Completed', 'Delivered'])
+    pending_revenue = sum(float(o.subtotal) for o in orders if o.status in ['Confirmed', 'Packed', 'Pending', 'Accepted', 'Preparing', 'Ready for Dispatch'])
     cancelled_revenue = sum(float(o.subtotal) for o in orders if o.status == 'Cancelled')
 
     transactions = [{

@@ -338,13 +338,15 @@ class FarmerOrder(db.Model):
     order_id = db.Column(db.Integer, db.ForeignKey('orders.id', ondelete='CASCADE'), nullable=False, index=True)
     farmer_id = db.Column(db.Integer, db.ForeignKey('farmer_profiles.id'), nullable=False, index=True)
     subtotal = db.Column(db.Numeric(10, 2), nullable=False)
-    status = db.Column(db.String(30), default='Pending')  # 'Pending', 'Accepted', 'Preparing', 'Ready for Dispatch', 'Completed', 'Cancelled'
+    status = db.Column(db.String(30), default='Confirmed')  # 'Confirmed', 'Packed', 'Delivered', 'Completed', 'Cancelled'
+    delivery_otp = db.Column(db.String(10), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     items = db.relationship('OrderItem', backref='farmer_order', lazy='dynamic', cascade='all, delete-orphan')
 
     def to_dict(self):
+        addr = self.order.address if self.order else None
         return {
             'id': self.id,
             'order_id': self.order_id,
@@ -353,9 +355,12 @@ class FarmerOrder(db.Model):
             'farmer_id': self.farmer_id,
             'subtotal': float(self.subtotal),
             'status': self.status,
+            'delivery_otp': self.delivery_otp,
             'buyer_name': self.order.buyer.full_name if self.order and self.order.buyer else 'Buyer',
             'buyer_phone': self.order.buyer.mobile_number if self.order and self.order.buyer else None,
-            'delivery_address': self.order.address.formatted_address if self.order and self.order.address else None,
+            'delivery_address': addr.formatted_address if addr else None,
+            'delivery_latitude': float(addr.latitude) if addr and addr.latitude is not None else None,
+            'delivery_longitude': float(addr.longitude) if addr and addr.longitude is not None else None,
             'items': [item.to_dict() for item in self.items]
         }
 
@@ -730,7 +735,9 @@ class CommunityOrder(db.Model):
     title_note = db.Column(db.String(255), nullable=True)
     target_qty_kg = db.Column(db.Numeric(10, 2), nullable=False, default=Decimal('50.00'))
     current_qty_kg = db.Column(db.Numeric(10, 2), nullable=False, default=Decimal('0.00'))
-    status = db.Column(db.String(30), nullable=False, default='open_demand')  # 'open_demand' | 'campaign_active' | 'confirmed' | 'out_for_delivery' | 'delivered' | 'cancelled'
+    status = db.Column(db.String(30), nullable=False, default='open_demand')  # 'open_demand' | 'campaign_active' | 'completed' | 'confirmed' | 'out_for_delivery' | 'delivered' | 'cancelled'
+    price_distributed = db.Column(db.Boolean, nullable=False, default=False)
+    final_unit_price = db.Column(db.Numeric(10, 2), nullable=True)
     expires_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -760,6 +767,8 @@ class CommunityOrder(db.Model):
             effective_price, active_tier = base_price, 0
 
         items_list = self.items.all()
+        purchased_members_count = len({i.user_id for i in items_list})
+        total_members_count = self.community.members.filter_by(status='active').count() if self.community else 0
         return {
             'id': self.id,
             'community_id': self.community_id,
@@ -785,6 +794,10 @@ class CommunityOrder(db.Model):
             'effective_price': effective_price,
             'active_tier': active_tier,
             'participants_count': len(items_list),
+            'purchased_members_count': purchased_members_count,
+            'total_members_count': total_members_count,
+            'price_distributed': bool(self.price_distributed),
+            'final_unit_price': float(self.final_unit_price) if self.final_unit_price is not None else None,
             'status': self.status,
             'expires_at': (camp.expires_at or self.expires_at).isoformat() if (camp and camp.expires_at) or self.expires_at else None,
             'items': [i.to_dict(include_contact=include_delivery_contacts) for i in items_list],
@@ -803,20 +816,25 @@ class CommunityOrderItem(db.Model):
     unit_price_locked = db.Column(db.Numeric(10, 2), nullable=True)
     delivery_landmark = db.Column(db.String(200), nullable=True)
     contact_phone = db.Column(db.String(20), nullable=True)
-    payment_status = db.Column(db.String(20), nullable=False, default='pending')
+    payment_status = db.Column(db.String(30), nullable=False, default='pending_cod')
+    payment_method = db.Column(db.String(20), nullable=False, default='COD')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship('User')
 
     def to_dict(self, include_contact=False):
+        qty = float(self.quantity_kg)
+        locked = float(self.unit_price_locked) if self.unit_price_locked is not None else None
         data = {
             'id': self.id,
             'community_order_id': self.community_order_id,
             'user_id': self.user_id,
             'member_name': self.user.full_name if self.user else 'Member',
-            'quantity_kg': float(self.quantity_kg),
-            'unit_price_locked': float(self.unit_price_locked) if self.unit_price_locked is not None else None,
+            'quantity_kg': qty,
+            'unit_price_locked': locked,
+            'total_payable': round(qty * locked, 2) if locked is not None else None,
             'payment_status': self.payment_status,
+            'payment_method': self.payment_method,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
         if include_contact:

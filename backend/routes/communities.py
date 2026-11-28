@@ -7,7 +7,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from backend.extensions import db
 from backend.models import (
-    User, Address, CartItem, Product,
+    User, Address, CartItem, Product, Notification,
     Community, CommunityMember, BulkCampaign,
     CommunityOrder, CommunityOrderItem, CommunityReview
 )
@@ -350,6 +350,71 @@ def contribute_to_community_order(order_id):
 
     return jsonify({
         'message': f'Added {float(qty)} kg to group order!',
+        'order': co.to_dict(),
+    }), 200
+
+
+@communities_bp.route('/orders/<int:order_id>/complete-and-distribute', methods=['POST'])
+@jwt_required()
+def complete_and_distribute_order(order_id):
+    user_id = int(get_jwt_identity())
+    co = CommunityOrder.query.get_or_404(order_id)
+    membership = CommunityMember.query.filter_by(community_id=co.community_id, user_id=user_id, status='active').first()
+    if not membership:
+        return jsonify({'error': 'Join this community first.'}), 403
+
+    order_dict = co.to_dict()
+    final_price = Decimal(str(order_dict['effective_price']))
+    co.final_unit_price = final_price
+    co.price_distributed = True
+    co.status = 'completed'
+
+    notified_users = set()
+    for item in co.items.all():
+        item.unit_price_locked = final_price
+        if item.payment_status not in ('paid', 'cod_confirmed'):
+            item.payment_status = 'awaiting_choice'
+            item.payment_method = 'COD'
+        if item.user_id not in notified_users:
+            notified_users.add(item.user_id)
+            share_amt = float(item.quantity_kg) * float(final_price)
+            db.session.add(Notification(
+                user_id=item.user_id,
+                title=f"Pool Completed: {order_dict['product_name']}",
+                message=f"Final price ₹{float(final_price):.2f}/{order_dict['unit']} locked! Your share is ₹{share_amt:.2f}. Pay in-app or via Cash on Delivery (COD)."
+            ))
+
+    db.session.commit()
+    return jsonify({
+        'message': f'Pool completed & final price ₹{float(final_price):.2f}/{order_dict["unit"]} distributed to members.',
+        'order': co.to_dict(),
+    }), 200
+
+
+@communities_bp.route('/orders/<int:order_id>/pay-share', methods=['POST'])
+@jwt_required()
+def pay_community_share(order_id):
+    user_id = int(get_jwt_identity())
+    data = request.get_json() or {}
+    method = (data.get('payment_method') or 'COD').upper()
+    if method not in ('COD', 'ONLINE'):
+        return jsonify({'error': 'payment_method must be COD or ONLINE'}), 400
+
+    co = CommunityOrder.query.get_or_404(order_id)
+    if not co.price_distributed and co.status != 'completed':
+        return jsonify({'error': 'Payment opens only after the community pool completes and final prices are distributed.'}), 400
+
+    my_items = CommunityOrderItem.query.filter_by(community_order_id=co.id, user_id=user_id).all()
+    if not my_items:
+        return jsonify({'error': 'You have no items in this community order.'}), 404
+
+    for item in my_items:
+        item.payment_method = method
+        item.payment_status = 'paid' if method == 'ONLINE' else 'cod_confirmed'
+
+    db.session.commit()
+    return jsonify({
+        'message': 'Paid in app!' if method == 'ONLINE' else 'Confirmed Cash on Delivery (COD)!',
         'order': co.to_dict(),
     }), 200
 
