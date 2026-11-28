@@ -82,7 +82,6 @@ const CheckoutPage = () => {
         payment_method: paymentMethod
       });
       const createdOrder = res.data.order;
-      await fetchCart();
 
       if (paymentMethod === 'RAZORPAY') {
         const payRes = await api.post('/api/payments/create', {
@@ -114,6 +113,7 @@ const CheckoutPage = () => {
                     razorpay_payment_id: rpResponse.razorpay_payment_id,
                     razorpay_signature: rpResponse.razorpay_signature,
                   });
+                  await fetchCart();
                   navigate('/buyer/order-success', { state: { order: vRes.data.order } });
                 } catch (vErr) {
                   setError(vErr.response?.data?.error || 'Razorpay payment verification failed');
@@ -121,15 +121,16 @@ const CheckoutPage = () => {
               },
               theme: { color: '#246B45' },
               modal: {
-                ondismiss: () => {
-                  setError(`Razorpay checkout closed. Order ${createdOrder.order_number} is saved as Pending.`);
+                ondismiss: async () => {
+                  await api.post('/api/payments/cancel', { order_id: createdOrder.id }).catch(() => {});
+                  setError('Payment cancelled. Your items are still in your cart.');
                 },
               },
             });
             rp.on('payment.failed', async (resp) => {
               const reason = resp?.error?.description || 'Razorpay payment failed';
               await api.post('/api/payments/fail', { order_id: createdOrder.id, reason }).catch(() => {});
-              setError(`${reason} (Order ${createdOrder.order_number})`);
+              setError(`${reason}. Your items are still in your cart.`);
             });
             rp.open();
             return;
@@ -143,6 +144,7 @@ const CheckoutPage = () => {
         return;
       }
 
+      await fetchCart();
       navigate('/buyer/order-success', { state: { order: createdOrder } });
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to place order');
@@ -180,6 +182,7 @@ const CheckoutPage = () => {
         razorpay_payment_id: `pay_rp_${Date.now()}`,
         razorpay_signature: 'valid_sandbox_signature',
       });
+      await fetchCart();
       setRazorpayModal(null);
       navigate('/buyer/order-success', { state: { order: vRes.data.order } });
     } catch (err) {
@@ -527,9 +530,11 @@ const CheckoutPage = () => {
               <button
                 type="button"
                 disabled={verifyingRp}
-                onClick={() => {
+                onClick={async () => {
+                  const orderId = razorpayModal.order.id;
+                  await api.post('/api/payments/cancel', { order_id: orderId }).catch(() => {});
                   setRazorpayModal(null);
-                  setError(`Razorpay payment cancelled. Order ${razorpayModal.payData.order_number} is saved as Pending.`);
+                  setError('Payment cancelled. Your items are still in your cart.');
                 }}
                 className="w-full py-2 text-[11px] font-bold text-gray-500 hover:text-gray-700"
               >

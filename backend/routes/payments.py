@@ -3,7 +3,7 @@ import razorpay
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.extensions import db
-from backend.models import Order, Payment
+from backend.models import Order, Payment, CartItem, Product
 
 payments_bp = Blueprint('payments', __name__)
 
@@ -108,6 +108,8 @@ def verify_payment():
         payment.payment_reference = signature
 
     order.payment_status = 'Successful'
+    # Clear buyer cart only after Razorpay payment succeeds
+    CartItem.query.filter_by(buyer_id=user_id).delete()
     db.session.commit()
 
     return jsonify({
@@ -115,6 +117,18 @@ def verify_payment():
         'payment_status': 'Successful',
         'order': order.to_dict()
     }), 200
+
+
+def _restore_order_stock(order):
+    """Restore product stock if a pending Razorpay order is cancelled or failed."""
+    if order.order_status == 'Cancelled':
+        return
+    for item in order.items:
+        prod = db.session.get(Product, item.product_id)
+        if prod:
+            prod.available_quantity = (prod.available_quantity or 0) + item.quantity
+            prod.sync_stock_flags()
+    order.order_status = 'Cancelled'
 
 
 @payments_bp.route('/fail', methods=['POST'])
@@ -138,10 +152,41 @@ def fail_payment():
         payment.payment_reference = reason[:120]
 
     order.payment_status = 'Failed'
+    _restore_order_stock(order)
     db.session.commit()
 
     return jsonify({
         'message': reason,
         'payment_status': 'Failed',
+        'order': order.to_dict()
+    }), 200
+
+
+@payments_bp.route('/cancel', methods=['POST'])
+@jwt_required()
+def cancel_payment():
+    user_id = int(get_jwt_identity())
+    data = request.get_json() or {}
+    order_id = data.get('order_id')
+
+    order = Order.query.get(order_id)
+    if not order:
+        return jsonify({'error': 'Order not found'}), 404
+    if order.buyer_id != user_id:
+        return jsonify({'error': 'Unauthorized access to order'}), 403
+
+    payment = Payment.query.filter_by(order_id=order.id).first()
+    if payment:
+        payment.payment_provider = 'RAZORPAY'
+        payment.status = 'Cancelled'
+        payment.payment_reference = 'Cancelled by buyer before payment'
+
+    order.payment_status = 'Cancelled'
+    _restore_order_stock(order)
+    db.session.commit()
+
+    return jsonify({
+        'message': 'Payment cancelled. Items remain in your cart.',
+        'payment_status': 'Cancelled',
         'order': order.to_dict()
     }), 200

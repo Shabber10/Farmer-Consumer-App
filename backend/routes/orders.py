@@ -129,8 +129,9 @@ def place_order():
         )
         db.session.add(payment)
 
-        # Step 5: Clear Cart
-        CartItem.query.filter_by(buyer_id=user_id).delete()
+        # Step 5: Clear Cart immediately ONLY for non-Razorpay methods (Razorpay clears cart upon /api/payments/verify)
+        if payment_method != 'RAZORPAY':
+            CartItem.query.filter_by(buyer_id=user_id).delete()
 
         # Step 6: Notify Buyer
         buyer_notif = Notification(

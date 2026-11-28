@@ -178,7 +178,7 @@ const AddProductPage = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8 space-y-6 pb-20 md:pb-8">
+    <div className="w-full max-w-2xl min-w-0 overflow-x-hidden mx-auto px-3 sm:px-4 py-5 sm:py-8 space-y-5 pb-20 md:pb-8">
       {/* Top Bar */}
       <div className="flex items-center space-x-3">
         <BackButton fallbackPath="/farmer/products" variant="circle" />
